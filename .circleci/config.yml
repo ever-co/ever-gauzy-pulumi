@@ -1,4 +1,10 @@
 version: 2.1
+
+defaults: &defaults
+    # put here anything which is common between all jobs
+    # we define default work dir, however almost every job redefine it
+    working_directory: /tmp/workspace
+
 orbs:
   pulumi: pulumi/pulumi@1.0.0
 jobs:
