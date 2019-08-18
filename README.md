@@ -4,7 +4,7 @@ WIP :)
 
 Quick start:
 
-- Setup pulumi locally
+- [Setup pulumi locally](https://www.pulumi.com/docs/reference/install)
 - Setup AWS CLI locally
 - Configure cloud credentials locally with `aws configure` and create AWS profile: `ever`
 - Deploy to Cloud: `pulumi up`
