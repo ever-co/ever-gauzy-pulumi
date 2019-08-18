@@ -1,0 +1,17 @@
+version: 2.1
+orbs:
+  pulumi: pulumi/pulumi@1.0.0
+jobs:
+  build:
+    docker:
+      - image: circleci/node:latest
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - pulumi/login
+      - run:
+          command: |
+            npm install yarn -g
+            yarn install
+      - pulumi/update:
+          stack: dev
