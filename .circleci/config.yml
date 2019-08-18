@@ -7,11 +7,13 @@ defaults: &defaults
 
 orbs:
   pulumi: pulumi/pulumi@1.0.0
+
 jobs:
   build:
+    <<: *defaults
+    working_directory: /tmp/workspace/monorepo-root  
     docker:
-      - image: circleci/node:latest
-    working_directory: ~/repo
+      - image: circleci/node:latest    
     steps:
       - checkout
       - run:
