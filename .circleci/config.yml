@@ -8,10 +8,32 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - run:
+            name: 'Installing latest Yarn'
+            command: |
+                      # remove default yarn
+                      sudo rm -rf $(dirname $(which yarn))/yarn*
+                      # download latest
+                      rm -rf ~/.yarn
+                      curl -o- -L https://yarnpkg.com/install.sh | bash
+                      echo 'export PATH="${PATH}:${HOME}/.yarn/bin:${HOME}/.config/yarn/global/node_modules/.bin"' >> $BASH_ENV  
+      - restore_cache:
+            name: Restore Yarn Package Cache
+            keys:
+                      - yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
       - pulumi/login
       - run:
-          command: |
-            npm install yarn -g
+          name: 'Installing NPM Packages'
+          command: |            
             yarn install
       - pulumi/update:
-          stack: dev
+              stack: dev
+      - save_cache:
+                  name: Save Yarn Package Cache
+                  key: yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
+                  paths:
+                      - ~/.cache/yarn
+      - persist_to_workspace:
+                  root: /tmp/workspace/monorepo-root
+                  paths:
+                      - '*'          
