@@ -1,7 +1,8 @@
 {
     "name": "gauzy-pulumi",
     "devDependencies": {
-        "@types/node": "latest"
+        "@types/node": "^12.7.2",
+        "@types/pg": "^7.11.0"
     },
     "dependencies": {
         "dotenv": "^8.1.0",
@@ -11,6 +12,7 @@
         "@pulumi/docker": "^0.17.2",
         "@pulumi/aws": "^0.18.27",
         "@pulumi/awsx": "^0.18.8",
-        "@pulumi/eks": "^0.18.11"
+        "@pulumi/eks": "^0.18.11",
+        "pg": "^7.12.1"
     }
 }
