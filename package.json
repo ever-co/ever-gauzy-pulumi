@@ -1,0 +1,15 @@
+{
+    "name": "gauzy-pulumi",
+    "devDependencies": {
+        "@types/node": "latest"
+    },
+    "dependencies": {
+        "@pulumi/cloud": "^0.18.1",
+        "@pulumi/cloud-aws": "^0.18.1",
+        "@pulumi/pulumi": "^0.17.28",
+        "@pulumi/docker": "^0.17.2",
+        "@pulumi/aws": "^0.18.27",
+        "@pulumi/awsx": "^0.18.8",
+        "@pulumi/eks": "^0.18.11"
+    }
+}
