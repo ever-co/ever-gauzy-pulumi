@@ -28,9 +28,9 @@ export const getIsPubliclyAccessible = () => {
  * Create Aurora Serverless PostgreSQL Cluster
  */
 export const createPostgreSQLCluster = async () => {
-  const dbName = process.env.DB_NAME;
-  const dbUser = process.env.DB_USER;
-  const dbPassword = process.env.DB_PASS;
+  const dbName = <string>process.env.DB_NAME;
+  const dbUser = <string>process.env.DB_USER;
+  const dbPassword = <string>process.env.DB_PASS;
 
   if (!dbName || !dbPassword || !dbUser) {
     throw new Error("DB Credentials invalid");

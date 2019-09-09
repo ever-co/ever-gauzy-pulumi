@@ -1,18 +1,18 @@
 {
     "name": "gauzy-pulumi",
-    "devDependencies": {
-        "@types/node": "^12.7.2",
-        "@types/pg": "^7.11.0"
+    "devDependencies": {        
+        "@types/node": "^12.7.4",
+        "@types/pg": "^7.11.1"
     },
     "dependencies": {
-        "dotenv": "^8.1.0",
+        "dotenv": "^8.1.0",        
         "@pulumi/cloud": "^0.18.1",
         "@pulumi/cloud-aws": "^0.18.1",
-        "@pulumi/pulumi": "^0.17.28",
-        "@pulumi/docker": "^0.17.2",
-        "@pulumi/aws": "^0.18.27",
-        "@pulumi/awsx": "^0.18.8",
-        "@pulumi/eks": "^0.18.11",
+        "@pulumi/pulumi": "^1.0.0",
+        "@pulumi/docker": "^0.17.4",
+        "@pulumi/aws": "^1.1.0",
+        "@pulumi/awsx": "^0.18.10",
+        "@pulumi/eks": "^0.18.14",
         "pg": "^7.12.1"
     }
 }
