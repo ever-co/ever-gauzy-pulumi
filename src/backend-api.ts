@@ -1,21 +1,14 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
-import * as pulumi from "@pulumi/pulumi";
+import { Cluster } from "@pulumi/awsx/ecs";
 
 // Example how to get the password to use from config.
+// import * as pulumi from "@pulumi/pulumi";
 // const config = new pulumi.Config();
 // const password = config.require("password");
 
-export const createBackendAPI = async (dbHost: string, port: number) => {
-
-    const vpc = awsx.ec2.Vpc.getDefault();
-
-    // Create an ECS Fargate cluster.
-    const cluster = new awsx.ecs.Cluster("gauzy", { 
-        vpc,
-        name: "gauzy"
-    });
-
+export const createBackendAPI = async (cluster: Cluster, dbHost: string, port: number) => {
+    
     // Define networking (load balancer)
     const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
         "gauzy-api", { external: true, securityGroups: cluster.securityGroups });
@@ -60,8 +53,8 @@ export const createBackendAPI = async (dbHost: string, port: number) => {
       containers: {          
         backendAPI: {
           image,
-          cpu: 1045 /*100% of 1024 is 1 vCPU*/,
-          memory: 4096 /*MB*/,
+          cpu: 1024 /*100% of 1024 is 1 vCPU*/,
+          memory: 2048 /*MB*/,
           portMappings: [backendAPIListener],
           environment: [              
             { name: "DB_TYPE", value: 'postgres' },
