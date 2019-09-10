@@ -20,7 +20,7 @@ export const createBackendAPI = async (dbHost: string, port: number) => {
     const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
         "gauzy-api", { external: true, securityGroups: cluster.securityGroups });
 
-    const backendAPIListener = alb.createListener("gauzy-api", { port: 80, external: true });
+    const backendAPIListener = alb.createListener("gauzy-api", { port: 3000, protocol: "HTTP", external: true });
 
     /*
   const backendAPIListener = new awsx.elasticloadbalancingv2.NetworkListener(
@@ -60,10 +60,11 @@ export const createBackendAPI = async (dbHost: string, port: number) => {
       containers: {          
         backendAPI: {
           image,
-          cpu: 102 /*10% of 1024*/,
-          memory: 512 /*MB*/,
+          cpu: 1045 /*100% of 1024 is 1 vCPU*/,
+          memory: 4096 /*MB*/,
           portMappings: [backendAPIListener],
-          environment: [
+          environment: [              
+            { name: "DB_TYPE", value: 'postgres' },
             { name: "DB_HOST", value: dbHost },
             { name: "DB_PORT", value: port.toString() },
             { name: "DB_PASS", value: <string>process.env.DB_PASS },
