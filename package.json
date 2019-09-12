@@ -7,12 +7,14 @@
     "dependencies": {
         "dotenv": "^8.1.0",        
         "@pulumi/cloud": "^0.18.1",
-        "@pulumi/cloud-aws": "^0.18.1",
-        "@pulumi/pulumi": "^1.0.0",
+        "@pulumi/cloud-aws": "^0.18.1",        
+        "@pulumi/pulumi": "^1.1.0",
         "@pulumi/docker": "^0.17.4",
         "@pulumi/aws": "^1.1.0",
         "@pulumi/awsx": "^0.18.10",
         "@pulumi/eks": "^0.18.14",
+        "@pulumi/cloudflare": "^0.17.14",
+        "@pulumi/datadog": "0.18.11",
         "pg": "^7.12.1"
     }
 }

@@ -33,6 +33,14 @@ const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile"
 
 - [ ] Manually changed Health Checks in LB for website: increased Unhealthy threshold to 10, timeout to 120 and Interval to 300. Reason: too slow angular build on first run (we should change from Angular dev server / build anyway later, so such issue will not be relevant in the future)
 
+## Some interesting Pulumi repos:
+
+- <https://github.com/cappalyst/cappalyst-pulumi>
+- <https://www.npmjs.com/package/@operator-error/pulumi-lambda-cert>
+- <https://github.com/jen20/pulumi-aws-vpc>
+- <https://github.com/ibrasho/pulumi-github>
+- <https://github.com/k-higuchi0440/pulumi-aws-staticsite-builder>
+
 ## Trademarks
 
 Gauzy™ is a trademark of Ever Co. LTD.  

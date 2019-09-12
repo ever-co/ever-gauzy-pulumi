@@ -7,13 +7,15 @@ import { Cluster } from "@pulumi/awsx/ecs";
 // const config = new pulumi.Config();
 // const password = config.require("password");
 
+export const backendPort: number = 3000;
+
 export const createBackendAPI = async (cluster: Cluster, dbHost: string, port: number) => {
     
     // Define networking (load balancer)
     const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
         "gauzy-api", { external: true, securityGroups: cluster.securityGroups });
 
-    const backendAPIListener = alb.createListener("gauzy-api", { port: 3000, protocol: "HTTP", external: true });
+    const backendAPIListener = alb.createListener("gauzy-api", { port: backendPort, protocol: "HTTP", external: true });
 
     /*
   const backendAPIListener = new awsx.elasticloadbalancingv2.NetworkListener(

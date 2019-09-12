@@ -2,13 +2,15 @@ import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 import { Cluster } from "@pulumi/awsx/ecs";
 
+export const frontendPort: number = 4200;
+
 export const createFrontend = async (cluster: Cluster, apiBaseUrl: string) => {
     
     // Define networking (load balancer)
     const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
         "gauzy-web", { external: true, securityGroups: cluster.securityGroups });
 
-    const frontendListener = alb.createListener("gauzy-web", { port: 4200, protocol: "HTTP", external: true });
+    const frontendListener = alb.createListener("gauzy-web", { port: frontendPort, protocol: "HTTP", external: true });
     
     const context = "C:/Coding/Gauzy/gauzy"; // "./gauzy";
     const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile" // "./gauzy/.deploy/webapp/Dockerfile"

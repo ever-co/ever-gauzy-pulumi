@@ -21,11 +21,13 @@ import * as frontend from "./src/frontend";
       });
   
       const backendAPIResponse = await backendAPI.createBackendAPI(fargateCluster, dbHost, port);
-      backendAPIResponse.backendAPIListener.endpoint.hostname.apply(async (apiUrl: string) => {
-        console.log(`API URL: ${apiUrl}:3000`);
-        const frontendResponse = await frontend.createFrontend(fargateCluster, apiUrl);
+      backendAPIResponse.backendAPIListener.endpoint.hostname.apply(async (apiUrl: string) => {       
+        const fullApiUrl: string = `http://${apiUrl}:${backendAPI.backendPort}`;
+        console.log(`API URL: ${fullApiUrl}`);
+        const frontendResponse = await frontend.createFrontend(fargateCluster, fullApiUrl);
         frontendResponse.frontendListener.endpoint.hostname.apply(async (frontendUrl: string) => {
-          console.log(`Frontend URL: ${frontendUrl}:4200`);
+          const fullFrontendUrl: string = `http://${frontendUrl}:${frontend.frontendPort}`;
+          console.log(`Frontend URL: ${fullFrontendUrl}`);
         });
       });
       

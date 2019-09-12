@@ -124,6 +124,20 @@
   dependencies:
     "@pulumi/pulumi" "^0.17.4"
 
+"@pulumi/cloudflare@^0.17.14":
+  version "0.17.14"
+  resolved "https://registry.yarnpkg.com/@pulumi/cloudflare/-/cloudflare-0.17.14.tgz#753216061b62652092ccf2eab173ef8d41bdb2eb"
+  integrity sha512-XMqY2ZePcFitVt1Vz8cYmZj+uHfr3pJ3B9GCm5vZYYpK7HQM+P+9zo1YnkDLmelbgVjOPOdWTdtuDDvpvZY6JA==
+  dependencies:
+    "@pulumi/pulumi" "^1.0.0"
+
+"@pulumi/datadog@0.18.11":
+  version "0.18.11"
+  resolved "https://registry.yarnpkg.com/@pulumi/datadog/-/datadog-0.18.11.tgz#95ca88d66911bca39d403384f94ab6ab641a8bec"
+  integrity sha512-z4a91OAFeqE87cBrAhLyLcgG16YbB/hDDTwWxjr/I6Np7X+eUaJjsKRDfi1DdoEyIpML/GKeMR0HBX+sBEKY4w==
+  dependencies:
+    "@pulumi/pulumi" "^1.0.0"
+
 "@pulumi/docker@^0.17.0", "@pulumi/docker@^0.17.2":
   version "0.17.2"
   resolved "https://registry.yarnpkg.com/@pulumi/docker/-/docker-0.17.2.tgz#83deb9fad6be731d408a0e7aac7c0b57300545f7"
@@ -192,6 +206,26 @@
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@pulumi/pulumi/-/pulumi-1.0.0.tgz#fafabd0cb145592b277224694ee55baa02de12cb"
   integrity sha512-8Cnfri5iIrsZrFWuNs7vX2B4nRRmBz7vOkaF92oTeKOt2J3vcW0u9Yi1XOnMlG5CSUIDt4tVdf66QyIclh8r/Q==
+  dependencies:
+    "@pulumi/query" "^0.3.0"
+    deasync "^0.1.15"
+    google-protobuf "^3.5.0"
+    grpc "1.21.1"
+    minimist "^1.2.0"
+    normalize-package-data "^2.4.0"
+    protobufjs "^6.8.6"
+    read-package-tree "^5.3.1"
+    require-from-string "^2.0.1"
+    semver "^6.1.0"
+    source-map-support "^0.4.16"
+    ts-node "^7.0.0"
+    typescript "^3.0.0"
+    upath "^1.1.0"
+
+"@pulumi/pulumi@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@pulumi/pulumi/-/pulumi-1.1.0.tgz#d7eb3953206ff25b950069ad325493b9d90256de"
+  integrity sha512-onVOAKo2H1WgyT6v1053CrHNjpoCbyj7Pq4DYORk7Uc6cTFGkI7wJhs7dUDVLlx+RUXSxIo+q4oAHz7bIVWZNw==
   dependencies:
     "@pulumi/query" "^0.3.0"
     deasync "^0.1.15"
