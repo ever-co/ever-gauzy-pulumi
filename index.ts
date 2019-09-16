@@ -3,6 +3,7 @@ import * as awsx from "@pulumi/awsx";
 import * as db from "./src/db";
 import * as backendAPI from "./src/backend-api";
 import * as frontend from "./src/frontend";
+import { apiDomain, fullApiUrl, webappDomain, fullWebappUrl } from "./src/config";
 
 (async () => {
   try {
@@ -21,13 +22,15 @@ import * as frontend from "./src/frontend";
       });
   
       const backendAPIResponse = await backendAPI.createBackendAPI(fargateCluster, dbHost, port);
-      backendAPIResponse.backendAPIListener.endpoint.hostname.apply(async (apiUrl: string) => {       
-        const fullApiUrl: string = `http://${apiUrl}:${backendAPI.backendPort}`;
-        console.log(`API URL: ${fullApiUrl}`);
+      backendAPIResponse.backendAPIListener.endpoint.hostname.apply(async (apiUrl: string) => {                       
+        console.log(`Create API CNAME: ${apiUrl} -> ${apiDomain}`);
+        console.log(`API will be available on: ${fullApiUrl}`);
+        
         const frontendResponse = await frontend.createFrontend(fargateCluster, fullApiUrl);
+
         frontendResponse.frontendListener.endpoint.hostname.apply(async (frontendUrl: string) => {
-          const fullFrontendUrl: string = `http://${frontendUrl}:${frontend.frontendPort}`;
-          console.log(`Frontend URL: ${fullFrontendUrl}`);
+          console.log(`Create Web App CNAME: ${frontendUrl} -> ${webappDomain}`);                    
+          console.log(`Web App will be available on: ${fullWebappUrl}`);
         });
       });
       

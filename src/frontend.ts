@@ -1,58 +1,77 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 import { Cluster } from "@pulumi/awsx/ecs";
-
-export const frontendPort: number = 4200;
+import {
+  frontendPort,
+  sslCertificateARN,
+  dockerContextPath,
+  dockerWebappFile,
+  HTTPS_PORT
+} from "./config";
 
 export const createFrontend = async (cluster: Cluster, apiBaseUrl: string) => {
-    
-    // Define networking (load balancer)
-    const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
-        "gauzy-web", { external: true, securityGroups: cluster.securityGroups });
+      
+  // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
+  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-web", {
+    securityGroups: cluster.securityGroups,
+    external: true,
+    enableHttp2: true,
+    // this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
+    enableDeletionProtection: false
+  });
 
-    const frontendListener = alb.createListener("gauzy-web", { port: frontendPort, protocol: "HTTP", external: true });
-    
-    const context = "C:/Coding/Gauzy/gauzy"; // "./gauzy";
-    const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile" // "./gauzy/.deploy/webapp/Dockerfile"
+  // This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
+  const webTarget = alb.createTargetGroup("gauzy-web-target", {
+    port: frontendPort,
+    protocol: "HTTP",
+    healthCheck: {
+      unhealthyThreshold: 10,
+      timeout: 120,
+      interval: 300,
+      path: "/",
+      protocol: "HTTP",
+      port: frontendPort.toString()
+    }
+  });
 
-    const repository = new aws.ecr.Repository("gauzy/webapp", { name: "gauzy/webapp" });
+  // This defines on which protocol/port Gauzy will be publicly accessible
+  const frontendListener = webTarget.createListener("gauzy-web", {
+    port: 443,
+    protocol: "HTTPS",
+    external: true,
+    certificateArn: sslCertificateARN,
+    sslPolicy: "ELBSecurityPolicy-2016-08"
+  });
 
-    // Build and publish a Docker image to a private ECR registry.
-    const image = awsx.ecs.Image.fromDockerBuild(
-      repository,                     
-      {                     
-        /**
-        * context is a path to a directory to use for the Docker build context, usually the directory
-        * in which the Dockerfile resides (although dockerfile may be used to choose a custom location
-        * independent of this choice). If a relative path is used, it is relative to the current working directory that
-        * Pulumi is evaluating.
-        */
-            context,
-            // path to the folder containing the Dockerfile
-            dockerfile    
-        }
-    );
+  const repository = new aws.ecr.Repository("gauzy/webapp", {
+    name: "gauzy/webapp"
+  });
 
- // A custom container for the backend api
- // Use the 'build' property to specify a folder that contains a Dockerfile.
- // Pulumi builds the container and pushes to an ECR registry
-  const frontendService = new awsx.ecs.FargateService("gauzy-webapp", {      
+  // Build and publish a Docker image to a private ECR registry.
+  const image = awsx.ecs.Image.fromDockerBuild(repository, {
+    context: dockerContextPath,
+    dockerfile: dockerWebappFile
+  });
+  
+  // A custom container for the backend api
+  // Use the 'build' property to specify a folder that contains a Dockerfile.
+  // Pulumi builds the container and pushes to an ECR registry
+  const frontendService = new awsx.ecs.FargateService("gauzy-webapp", {
     cluster,
     desiredCount: 2,
+    securityGroups: cluster.securityGroups,
     taskDefinitionArgs: {
-      containers: {          
+      containers: {
         frontend: {
           image,
           cpu: 1024 /*100% of 1024 is 1 vCPU*/,
           memory: 2048 /*MB*/,
           portMappings: [frontendListener],
-          environment: [              
-            { name: "API_BASE_URL", value: apiBaseUrl }            
-          ]  
+          environment: [{ name: "API_BASE_URL", value: apiBaseUrl }]
         }
-      }      
+      }
     }
   });
-  
+
   return { frontendListener, frontendService };
 };

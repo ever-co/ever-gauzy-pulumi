@@ -1,76 +1,86 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 import { Cluster } from "@pulumi/awsx/ecs";
+import {
+  backendPort,
+  sslCertificateARN,
+  dockerContextPath,
+  dockerAPIFile,
+  HTTPS_PORT
+} from "./config";
 
-// Example how to get the password to use from config.
-// import * as pulumi from "@pulumi/pulumi";
-// const config = new pulumi.Config();
-// const password = config.require("password");
+export const createBackendAPI = async (
+  cluster: Cluster,
+  dbHost: string,
+  port: number
+) => {
 
-export const backendPort: number = 3000;
+  // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
+  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-api", {
+    securityGroups: cluster.securityGroups,
+    external: true,    
+    enableHttp2: true,
+    // this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
+    enableDeletionProtection: false    
+  });
 
-export const createBackendAPI = async (cluster: Cluster, dbHost: string, port: number) => {
-    
-    // Define networking (load balancer)
-    const alb = new awsx.elasticloadbalancingv2.ApplicationLoadBalancer(
-        "gauzy-api", { external: true, securityGroups: cluster.securityGroups });
+  // This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
+  const apiBackendTarget = alb.createTargetGroup("gauzy-api-target", {
+    port: backendPort,
+    protocol: "HTTP",    
+    healthCheck: {      
+      unhealthyThreshold: 10,
+      timeout: 120,
+      interval: 300,
+      path: "/api/hello",
+      protocol: "HTTP",
+      port: backendPort.toString()
+    }
+  });
 
-    const backendAPIListener = alb.createListener("gauzy-api", { port: backendPort, protocol: "HTTP", external: true });
+  const backendAPIListener = apiBackendTarget.createListener("gauzy-api", {
+    port: 444,
+    protocol: "HTTPS",
+    external: true,
+    certificateArn: sslCertificateARN,    
+    sslPolicy: "ELBSecurityPolicy-2016-08"    
+  });
 
-    /*
-  const backendAPIListener = new awsx.elasticloadbalancingv2.NetworkListener(
-    "gauzy-api",
-    { port: 80 }
-  );
-  */
+  const repository = new aws.ecr.Repository("gauzy/api", { name: "gauzy/api" });
 
-    const context = "C:/Coding/Gauzy/gauzy"; // "./gauzy";
-    const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/api/Dockerfile" // "./gauzy/.deploy/api/Dockerfile"
-
-    const repository = new aws.ecr.Repository("gauzy/api", { name: "gauzy/api" });
-
-    // Build and publish a Docker image to a private ECR registry.
-    const image = awsx.ecs.Image.fromDockerBuild(      
-      repository,                     
-      {                     
-        /**
-        * context is a path to a directory to use for the Docker build context, usually the directory
-        * in which the Dockerfile resides (although dockerfile may be used to choose a custom location
-        * independent of this choice). If a relative path is used, it is relative to the current working directory that
-        * Pulumi is evaluating.
-        */
-            context,
-            // path to the folder containing the Dockerfile
-            dockerfile    
-        }
-    );
-
- // A custom container for the backend api
- // Use the 'build' property to specify a folder that contains a Dockerfile.
- // Pulumi builds the container and pushes to an ECR registry
-  const backendAPIService = new awsx.ecs.FargateService("gauzy-api", {      
+  // Build and publish a Docker image to a private ECR registry.
+  const image = awsx.ecs.Image.fromDockerBuild(repository, {
+    context: dockerContextPath,
+    dockerfile: dockerAPIFile
+  });
+  
+  // A custom container for the backend api
+  // Use the 'build' property to specify a folder that contains a Dockerfile.
+  // Pulumi builds the container and pushes to an ECR registry
+  const backendAPIService = new awsx.ecs.FargateService("gauzy-api", {
     cluster,
     desiredCount: 2,
+    securityGroups: cluster.securityGroups,
     taskDefinitionArgs: {
-      containers: {          
-        backendAPI: {
+      containers: {
+        backendAPI: {          
           image,
           cpu: 1024 /*100% of 1024 is 1 vCPU*/,
           memory: 2048 /*MB*/,
           portMappings: [backendAPIListener],
-          environment: [              
-            { name: "DB_TYPE", value: 'postgres' },
+          environment: [
+            { name: "DB_TYPE", value: "postgres" },
             { name: "DB_HOST", value: dbHost },
             { name: "DB_PORT", value: port.toString() },
             { name: "DB_PASS", value: <string>process.env.DB_PASS },
             { name: "DB_USER", value: <string>process.env.DB_USER },
             { name: "DB_NAME", value: <string>process.env.DB_NAME }
           ]
-          // command: ["redis-server", "--requirepass", redisPassword], - can be some command?          
+          // command: ["redis-server", "--requirepass", redisPassword], - can be some command?
         }
-      }      
+      }
     }
   });
-  
+
   return { backendAPIListener, backendAPIService };
 };

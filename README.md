@@ -15,7 +15,7 @@ Links:
 - Read more about Pulumi at <https://github.com/pulumi/pulumi>
 - For CircleCI configuration, see <https://github.com/pulumi/circleci>
 
-## TODOs
+## TODO
 
 - [ ] Frontend should auto-generate environment.ts and environment.prod.ts files on build using
 ENV vars. It's required for API_BASE_URL to be set correctly.
@@ -33,7 +33,11 @@ const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile"
 
 - [ ] Manually changed Health Checks in LB for website: increased Unhealthy threshold to 10, timeout to 120 and Interval to 300. Reason: too slow angular build on first run (we should change from Angular dev server / build anyway later, so such issue will not be relevant in the future)
 
-## Some interesting Pulumi repos:
+## Pulumi related FAQ
+
+- Removed resource manually in the Cloud? Run `pulumi refresh`
+
+## Pulumi related Open-Source projects
 
 - <https://github.com/cappalyst/cappalyst-pulumi>
 - <https://www.npmjs.com/package/@operator-error/pulumi-lambda-cert>
