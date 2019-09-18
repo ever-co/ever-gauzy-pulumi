@@ -16,6 +16,6 @@ jobs:
       env: 
         PULUMI_CI: up
         PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-      uses: pulumi/actions    
+      uses: docker://pulumi/actions    
       with:
         args: up
