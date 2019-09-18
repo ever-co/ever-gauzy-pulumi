@@ -18,4 +18,4 @@ jobs:
         PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       uses: pulumi/actions    
       with:
-        args: ["up"]
+        args: up
