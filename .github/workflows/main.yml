@@ -23,6 +23,7 @@ jobs:
       env:
         CI: true 
   deploy: 
+    needs: build
     runs-on: ubuntu-latest
     steps:    
     - name: Pulumi Preview
