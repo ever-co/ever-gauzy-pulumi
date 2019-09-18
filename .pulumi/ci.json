@@ -1,0 +1,5 @@
+{
+    "master": "prod",
+    "develop": "dev"
+	"demo": "demo"
+}
