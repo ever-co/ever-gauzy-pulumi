@@ -1,31 +1,13 @@
-workflow "Preview" {
-    on = "pull_request"
-    resolves = "Pulumi Preview (Merged Stack)"
-}
+name: Gauzy Pulumi
 
-action "Pulumi Preview (Merged Stack)" {
-    uses = "docker://pulumi/actions"
-    args = ["preview"]
-    env = {
-        PULUMI_CI = "pr"
-    }
-    secrets = [
-        "PULUMI_ACCESS_TOKEN"
-    ]
-}
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
-workflow "Update" {
-    on = "push"
-    resolves = ["Pulumi Deploy (Current Stack)"]
-}
-
-action "Pulumi Deploy (Current Stack)" {
-    uses = "docker://pulumi/actions"
-    args = ["up"]
-    env = {
-        PULUMI_CI = "up"
-    }
-    secrets = [
-        "PULUMI_ACCESS_TOKEN"
-    ]
-}
+jobs:
+  build: 
+    runs-on: ubuntu-latest
