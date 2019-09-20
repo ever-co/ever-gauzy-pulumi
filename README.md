@@ -22,6 +22,13 @@ Links:
 
 ## Implementation
 
+Implementation currenty based on Pulumi libraries specific to AWS Cloud.
+That's why no other Clouds currently supported, but it should be possible at some point to rewrite code using Pulumi Cloud-Agnostic Packages,
+see <https://github.com/pulumi/pulumi-cloud>, <https://www.pulumi.com/docs/reference/pkg/nodejs/pulumi/cloud>, <https://www.pulumi.com/docs/tutorials/cloudfx>, etc.
+(AWS and Azure clouds should be supported in such case)
+
+Note: for some of AWS specific features (if Pulumi does not support them yet) we can use AWS CDK, see <https://docs.aws.amazon.com/en_pv/cdk/latest/guide/home.html>
+
 ### Branches, Pulumi Stacks and Environments
 
 We have 3 following branches for Gauzy Pulumi repo:
