@@ -1,12 +1,12 @@
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
+import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   backendPort,
   sslCertificateARN,
   dockerContextPath,
-  dockerAPIFile,
-  HTTPS_PORT
+  dockerAPIFile  
 } from "./config";
 
 export const createBackendAPI = async (
@@ -54,10 +54,14 @@ export const createBackendAPI = async (
     dockerfile: dockerAPIFile
   });
   
+  const fargateServiceName = "gauzy-api-" + uuid().split("-")[0];
+
+  console.log(`Backend API Fargate Service Name ${fargateServiceName}`);
+
   // A custom container for the backend api
   // Use the 'build' property to specify a folder that contains a Dockerfile.
   // Pulumi builds the container and pushes to an ECR registry
-  const backendAPIService = new awsx.ecs.FargateService("gauzy-api", {
+  const backendAPIService = new awsx.ecs.FargateService(fargateServiceName, {
     cluster,
     desiredCount: 2,
     securityGroups: cluster.securityGroups,

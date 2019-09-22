@@ -2,7 +2,8 @@
     "name": "gauzy-pulumi",
     "devDependencies": {        
         "@types/node": "^12.7.4",
-        "@types/pg": "^7.11.1"
+        "@types/pg": "^7.11.1",
+        "@types/uuid": "^3.4.5"
     },
     "dependencies": {
         "dotenv": "^8.1.0",        
@@ -15,6 +16,7 @@
         "@pulumi/eks": "^0.18.14",
         "@pulumi/cloudflare": "^0.17.14",
         "@pulumi/datadog": "0.18.11",
+        "uuid": "^3.3.2",
         "pg": "^7.12.1"
     }
 }
