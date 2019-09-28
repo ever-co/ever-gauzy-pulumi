@@ -1,15 +1,12 @@
 import * as awsx from "@pulumi/awsx";
-import * as aws from "@pulumi/aws";
 import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   frontendPort,
-  sslCertificateARN,
-  dockerContextPath,
-  dockerWebappFile,
-} from "./config";
+  sslCertificateARN  
+} from "../../config";
 
-export const createFrontend = async (cluster: Cluster, apiBaseUrl: string) => {
+export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Cluster, apiBaseUrl: string) => {
       
   // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
   const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-web", {
@@ -42,17 +39,7 @@ export const createFrontend = async (cluster: Cluster, apiBaseUrl: string) => {
     certificateArn: sslCertificateARN,
     sslPolicy: "ELBSecurityPolicy-2016-08"
   });
-
-  const repository = new aws.ecr.Repository("gauzy/webapp", {
-    name: "gauzy/webapp"
-  });
-
-  // Build and publish a Docker image to a private ECR registry.
-  const image = awsx.ecs.Image.fromDockerBuild(repository, {
-    context: dockerContextPath,
-    dockerfile: dockerWebappFile
-  });
-  
+    
   const fargateServiceName = "gauzy-webapp-" + uuid().split("-")[0];
 
   console.log(`Frontend Fargate Service Name ${fargateServiceName}`);
@@ -67,7 +54,7 @@ export const createFrontend = async (cluster: Cluster, apiBaseUrl: string) => {
     taskDefinitionArgs: {
       containers: {
         frontend: {
-          image,
+          image: webappImage,
           cpu: 1024 /*100% of 1024 is 1 vCPU*/,
           memory: 2048 /*MB*/,
           portMappings: [frontendListener],

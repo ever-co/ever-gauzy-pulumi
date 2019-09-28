@@ -4,16 +4,20 @@ Note: WIP, but already useful :)
 
 ## Introduction
 
-This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`). It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
+This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`).
+It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
+Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
 
 ## Quick start
 
 - [Setup pulumi locally](https://www.pulumi.com/docs/reference/install)
 - Setup AWS CLI locally
-- Configure cloud credentials locally with `aws configure` and create AWS profile: `ever`
-- Change (optionally) Pulumi Stack with `pulumi stack select dev` (different stacks may use different services, e.g. k8s vs AWS Fargate for production vs development)
+- Configure cloud credentials locally with `aws configure` and create AWS profile: `ever` (or replace AWS profile name in Pulumi.*.yaml files)
+- Change (optionally) Pulumi Stack with `pulumi stack select dev`, where `dev` is stack name.
 - Deploy to Cloud: `pulumi up`
 - Enjoy
+
+Note: different stacks may use different services, e.g. AWS EKS (k8s) for `prod` (production) stack, AWS ECS Fargate for `demo` stack or AWS ECS container instances (with EC2) for `dev` stack.
 
 Links:
 
@@ -33,15 +37,16 @@ Note: for some of AWS specific features (if Pulumi does not support them yet) we
 
 We have 3 following branches for Gauzy Pulumi repo:
 
-- `master` for Production deployment (<https://app.gauzy.co>)
-- `develop` for Development deployment (default Github branch, <https://dev.gauzy.co>)
-- `demo` for demo (<https://demo.gauzy.co>)
+- `demo` for demo (<https://demo.gauzy.co>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
+- `master` for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
+- `develop` for Development deployment ("default" branch, <http://appdev.gauzy.co:4200>). Stack / Environment called `dev`.
 
 Before Gauzy SaaS Platform will be ready, we just deploy current Gauzy Platform to all environments.
 
 Note: sub-domains are subject to change.
 
-Each Github branch correspond to separate Pulumi Stacks. Mapping defined in the [./pulumi/ci.json](https://github.com/ever-co/gauzy-pulumi/blob/develop/.pulumi/ci.json) file.
+Each Github branch correspond to separate Pulumi Stacks.
+Mapping defined in the [./pulumi/ci.json](https://github.com/ever-co/gauzy-pulumi/blob/develop/.pulumi/ci.json) file.
 
 In addition, Gauzy Platform build with different settings for each environment (e.g NODE_ENV set to `production` for production env)
 
@@ -51,7 +56,7 @@ In addition, Gauzy Platform build with different settings for each environment (
 
 - [ ] Finish setup Github Actions, see <https://github.com/ever-co/gauzy-pulumi/blob/master/.github/workflows/main.yml>
 
-- [ ] Add support for `develop` and `demo` stacks (branches created)
+- [ ] Add support for `develop` and `demo` stacks (branches created), WIP
 
 - [ ] Fix CircleCI build for this pulumi project: currently it does not have Docker in the build VM and so stage to build docker containers fails and also we should pull Gauzy repo into sub-folder for Docker builds or found another way. We also should fix PATH to docker files, which is hard-coded now like:
 
@@ -78,6 +83,54 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 - <https://github.com/jen20/pulumi-aws-vpc>
 - <https://github.com/ibrasho/pulumi-github>
 - <https://github.com/k-higuchi0440/pulumi-aws-staticsite-builder>
+
+## Contribute
+
+-   Please give us :star: on Github, it **helps**!
+-   You are more than welcome to submit feature requests
+-   Pull requests are always welcome! Please base pull requests against the _develop_ branch and follow the [contributing guide](.github/CONTRIBUTING.md).
+
+## Collaborators and Contributors
+
+### Development Team
+
+#### Core
+
+-   Ruslan Konviser ([Evereq](https://github.com/evereq))
+
+### Contributors
+
+-   View all of our [contributors](https://github.com/ever-co/gauzy/graphs/contributors)
+
+## Contact Us
+
+-   [Spectrum Community](https://spectrum.chat/gauzy)
+-   [Gitter Chat](https://gitter.im/ever-co/gauzy)
+-   [CodeMentor](https://www.codementor.io/evereq)
+-   For business inquiries: <mailto:gauzy@ever.co>
+-   Please report security vulnerabilities to <mailto:security@ever.co>
+-   [Gauzy Platform @ Twitter](https://twitter.com/gauzyplatform)
+-   [Gauzy Platform @ Facebook](https://www.facebook.com/gauzyplatform)
+
+## Security
+
+Gauzy™ follows good security practices, but 100% security cannot be guaranteed in any software!  
+Gauzy™ is provided AS IS without any warranty. Use at your own risk!  
+See more details in the [LICENSE](LICENSE).
+
+In a production setup, all client-side to server-side (backend, APIs) communications should be encrypted using HTTPS/WSS/SSL (REST APIs, GraphQL endpoint, Socket.io WebSockets, etc.).
+
+## License
+
+This software is available under [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.txt)
+
+This program is free software: you can redistribute it and/or modify it under the terms of the corresponding licenses described in the LICENSE files located in software sub-folders and under the terms of licenses described in individual files.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+You should have received a copy of the relevant GNU Licenses along with this program. If not, see http://www.gnu.org/licenses/.
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fever-co%2Fgauzy-pulumi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fever-co%2Fgauzy-pulumi?ref=badge_large)
 
 ## Trademarks
 
