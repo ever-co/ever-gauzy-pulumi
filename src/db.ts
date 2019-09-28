@@ -1,6 +1,7 @@
 import * as aws from "@pulumi/aws";
 import { Pool, Client } from "pg";
 import { EngineMode } from "@pulumi/aws/rds";
+import { Environment } from "./environments"
 
 export const getEngineMode = () => {
   let engineMode: EngineMode = "provisioned";
@@ -27,10 +28,11 @@ export const getIsPubliclyAccessible = () => {
 /**
  * Create Aurora Serverless PostgreSQL Cluster
  */
-export const createPostgreSQLCluster = async () => {
-  const dbName = <string>process.env.DB_NAME;
-  const dbUser = <string>process.env.DB_USER;
-  const dbPassword = <string>process.env.DB_PASS;
+export const createPostgreSQLCluster = async (environment: Environment) => {
+    
+  const dbName = process.env.DB_NAME || "gauzy";
+  const dbUser = process.env.DB_USER ? <string>process.env.DB_USER : "gauzy_user";
+  const dbPassword = process.env.DB_PASS ? <string>process.env.DB_PASS : "change_me";
 
   if (!dbName || !dbPassword || !dbUser) {
     throw new Error("DB Credentials invalid");
@@ -43,14 +45,16 @@ export const createPostgreSQLCluster = async () => {
       // TODO: we need to create security group with public access to DB
   }
 
-  const postgresqlCluster = new aws.rds.Cluster("gauzy-db", {
+  const clusterName = `gauzy-db-${environment.toLowerCase()}`;
+
+  // TODO: not sure yet if we should have different engine modes for production vs dev&demo environments (e.g. serverless / provisioned).
+  // For now we will use settings from environment DB_MODE (default to serverless)
+
+  const postgresqlCluster = new aws.rds.Cluster(clusterName, {
     availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"],
     backupRetentionPeriod: 30,
-    clusterIdentifier: "gauzy-db",
-
-    // TODO: set false in production
-    skipFinalSnapshot: true,
-
+    clusterIdentifier: clusterName,    
+    skipFinalSnapshot: environment != Environment.Prod,
     databaseName: dbName,
     storageEncrypted: true,
     engine: "aurora-postgresql",
@@ -58,18 +62,21 @@ export const createPostgreSQLCluster = async () => {
     masterPassword: dbPassword,
     masterUsername: dbUser,
     preferredBackupWindow: "07:00-09:00",
-    deletionProtection: false,
+    deletionProtection: environment == Environment.Prod,
     engineMode
   });
 
   // for engineMode: "serverless" we don't need instances
   if (engineMode == "provisioned") {
-    new aws.rds.ClusterInstance("gauzy-db-1", {
+
+    const instanceName = `gauzy-db-${environment.toLowerCase()}`;
+
+    new aws.rds.ClusterInstance(`${instanceName}-1`, {
       engine: "aurora-postgresql",
       engineVersion: postgresqlCluster.engineVersion,
       applyImmediately: true,
       clusterIdentifier: postgresqlCluster.id,
-      identifier: "gauzy-db-1",
+      identifier: `${instanceName}-1`,
       instanceClass: "db.t3.medium",
       autoMinorVersionUpgrade: true,
       availabilityZone: "us-east-1a",
@@ -86,12 +93,13 @@ export const createPostgreSQLCluster = async () => {
  * @param host
  * @param port
  */
-export const check = async (host: string, port: number) => {
+export const check = async (environment: Environment, host: string, port: number) => {
 
   if (getIsPubliclyAccessible()) {
-    const dbName = process.env.DB_NAME;
-    const dbUser = process.env.DB_USER;
-    const dbPassword = process.env.DB_PASS;
+
+    const dbName = process.env.DB_NAME || "gauzy";
+    const dbUser = process.env.DB_USER ? <string>process.env.DB_USER : "gauzy_user";
+    const dbPassword = process.env.DB_PASS ? <string>process.env.DB_PASS : "change_me";
 
     const connectionOptions = {
       user: dbUser,
