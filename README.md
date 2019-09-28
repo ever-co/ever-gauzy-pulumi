@@ -4,9 +4,9 @@ Note: WIP, but already useful :)
 
 ## Introduction
 
-This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`).
-It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
-Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
+- This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`).
+- It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
+- Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
 
 ## Quick start
 
@@ -35,11 +35,11 @@ Note: for some of AWS specific features (if Pulumi does not support them yet) we
 
 ### Branches, Pulumi Stacks and Environments
 
-We have 3 following branches for Gauzy Pulumi repo:
+We have 3 branches for Gauzy Pulumi repo:
 
-- `demo` for demo (<https://demo.gauzy.co>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
-- `master` for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
-- `develop` for Development deployment ("default" branch, <http://appdev.gauzy.co:4200>). Stack / Environment called `dev`.
+- `demo` branch for demo (<https://demo.gauzy.co>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
+- `master` branch for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
+- `develop` branch for Development deployment ("default" branch, <http://appdev.gauzy.co:4200>). Stack / Environment called `dev`.
 
 Before Gauzy SaaS Platform will be ready, we just deploy current Gauzy Platform to all environments.
 
@@ -104,6 +104,7 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 
 ## Contact Us
 
+-   [Slack Community](https://join.slack.com/t/gauzy/shared_invite/enQtNzc5MTA5MDUwODg2LTI0MGEwYTlmNWFlNzQzMzBlOWExNTk0NzAyY2IwYWYwMzZjMTliYjMwNDI3NTJmYmM4MDQ4NDliMDNiNDY1NWU)
 -   [Spectrum Community](https://spectrum.chat/gauzy)
 -   [Gitter Chat](https://gitter.im/ever-co/gauzy)
 -   [CodeMentor](https://www.codementor.io/evereq)
