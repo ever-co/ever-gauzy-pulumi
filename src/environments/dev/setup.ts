@@ -22,14 +22,14 @@ export const setupDevEnvironment = async (dockerImages: { apiImage: awsx.ecs.Ima
       });
       
       // create single auto-scalling group for both API and Front-end
-      const autoScalingGroup = cluster.createAutoScalingGroup("gauzy-api-dev", {
+      const autoScalingGroup = cluster.createAutoScalingGroup("gauzy-dev", {
         subnetIds: vpc.publicSubnetIds,
         templateParameters: {
             minSize: 1, 
             maxSize: 2 
         },
         launchConfigurationArgs: {
-            instanceType: "t2.small",
+            instanceType: "t3.medium",
         },
       });
 

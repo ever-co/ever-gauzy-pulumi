@@ -22,7 +22,7 @@ export const createBackendAPI = async (
           portMappings: [{ containerPort: 3000, hostPort: 3000, protocol: "tcp" }],
           image: apiImage,
           cpu: 512 /*100% of 1024 is 1 vCPU*/,
-          memory: 900 /*MB*/,
+          memory: 1900 /*MB*/,
           environment: [
             { name: "DB_TYPE", value: "postgres" },
             { name: "DB_HOST", value: dbHost },
