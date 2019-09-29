@@ -55,7 +55,7 @@ export const createFrontend = async (
         frontend: {
           portMappings: [frontendListener],
           image: webappImage,
-          cpu: 512 /*100% of 1024 is 1 vCPU*/,
+          cpu: 1024 /*100% of 1024 is 1 vCPU*/,
           memory: 1900 /*MB*/,
           environment: [{ name: "API_BASE_URL", value: apiBaseUrl }]
         }

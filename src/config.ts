@@ -11,25 +11,29 @@ export const frontendPort: number = 4200;
 // Port on which Docker exposes backend API server
 export const backendPort: number = 3000;
 
-// Demo API will be on https://apidemo.gauzy.co:444
+
+// Demo API will be on https://apidemo.gauzy.co:445
+export const demoApiPort: number = 445;
 export const demoApiDomain: string = 'apidemo.gauzy.co';
-export const fullDemoApiUrl: string = 'https://' + demoApiDomain + ":444";
+export const fullDemoApiUrl: string = `https://${demoApiDomain}:${demoApiPort}`;
 
 // Demo App will be on https://demo.gauzy.co
 export const demoWebappDomain: string = 'demo.gauzy.co';
 export const fullDemoWebappUrl: string = 'https://' + demoWebappDomain;
 
-// Dev API will be on https://api.gauzy.dev:444
+// Dev API will be on https://api.gauzy.dev:446
+export const devApiPort: number = 446;
 export const devApiDomain: string = 'api.gauzy.dev';
-export const fullDevApiUrl: string = 'https://' + devApiDomain + ":444";
+export const fullDevApiUrl: string = `https://${devApiDomain}:${devApiPort}`;
 
 // Dev App will be on https://app.gauzy.dev
 export const devWebappDomain: string = 'app.gauzy.dev';
 export const fullDevWebappUrl: string = 'https://' + devWebappDomain;
 
 // Prod API will be on https://api.gauzy.co:444
+export const prodApiPort: number = 444;
 export const prodApiDomain: string = 'api.gauzy.co';
-export const fullProdApiUrl: string = 'https://' + prodApiDomain + ":444";
+export const fullProdApiUrl: string = `https://${prodApiDomain}:${prodApiPort}`;
 
 // Prod App will be on https://app.gauzy.co
 export const prodWebappDomain: string = 'app.gauzy.co';

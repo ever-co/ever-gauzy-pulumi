@@ -3,7 +3,8 @@ import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   backendPort,
-  sslCoCertificateARN as sslCertificateARN
+  sslCoCertificateARN as sslCertificateARN,
+  demoApiPort
 } from "../../config";
 
 export const createBackendAPI = async (
@@ -40,7 +41,7 @@ export const createBackendAPI = async (
 
   const backendAPIListener = apiBackendTarget.createListener("gauzy-api-demo", {
     name: "gauzy-api-demo",
-    port: 444,
+    port: demoApiPort,
     protocol: "HTTPS",
     external: true,
     certificateArn: sslCertificateARN,    

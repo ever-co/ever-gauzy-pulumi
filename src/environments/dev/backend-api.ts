@@ -2,7 +2,8 @@ import * as awsx from "@pulumi/awsx";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   backendPort,
-  sslDevCertificateARN as sslCertificateARN
+  sslDevCertificateARN as sslCertificateARN,
+  devApiPort
 } from "../../config";
 
 export const createBackendAPI = async (
@@ -42,7 +43,7 @@ export const createBackendAPI = async (
 
   const backendAPIListener = apiBackendTarget.createListener("gauzy-api-dev", {
     name: "gauzy-api-dev",
-    port: 444,
+    port: devApiPort,
     protocol: "HTTPS",
     external: true,
     certificateArn: sslCertificateARN,    
@@ -62,7 +63,7 @@ export const createBackendAPI = async (
         backendAPI: {          
           portMappings: [backendAPIListener],
           image: apiImage,
-          cpu: 512 /*100% of 1024 is 1 vCPU*/,
+          cpu: 1024 /*100% of 1024 is 1 vCPU*/,
           memory: 1900 /*MB*/,
           environment: [
             { name: "DB_TYPE", value: "postgres" },
