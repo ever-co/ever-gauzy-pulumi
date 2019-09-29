@@ -26,7 +26,7 @@ Links:
 
 ## Implementation
 
-Implementation currenty based on Pulumi libraries specific to AWS Cloud.
+Implementation currently based on Pulumi libraries specific to AWS Cloud.
 That's why no other Clouds currently supported, but it should be possible at some point to rewrite code using Pulumi Cloud-Agnostic Packages,
 see <https://github.com/pulumi/pulumi-cloud>, <https://www.pulumi.com/docs/reference/pkg/nodejs/pulumi/cloud>, <https://www.pulumi.com/docs/tutorials/cloudfx>, etc.
 (AWS and Azure clouds should be supported in such case)
