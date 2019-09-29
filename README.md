@@ -37,9 +37,9 @@ Note: for some of AWS specific features (if Pulumi does not support them yet) we
 
 We have 3 branches for Gauzy Pulumi repo:
 
-- `demo` branch for demo (<https://demo.gauzy.co>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
+- `demo` branch for demo (<https://demo.gauzy.co> or <https://demo.gauzy.dev>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
 - `master` branch for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
-- `develop` branch for Development deployment ("default" branch, <http://appdev.gauzy.co:4200>). Stack / Environment called `dev`.
+- `develop` branch for Development deployment ("default" branch, <https://app.gauzy.dev>). Stack / Environment called `dev`.
 
 Before Gauzy SaaS Platform will be ready, we just deploy current Gauzy Platform to all environments.
 

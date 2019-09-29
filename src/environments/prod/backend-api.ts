@@ -4,7 +4,7 @@ import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   backendPort,
-  sslCertificateARN,
+  sslCoCertificateARN as sslCertificateARN,
   dockerContextPath,
   dockerAPIFile  
 } from "../../config";

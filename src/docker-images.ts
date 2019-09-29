@@ -5,8 +5,6 @@ import { Environment } from "./environments";
 
 export const createDockerImages = async (environment: Environment) => {
 
-    console.log(`Running 2 in ${environment} Environment`);
-
     const apiRepoName = `gauzy/api-${environment.toLowerCase()}`;
 
     const repositoryApi = new aws.ecr.Repository(apiRepoName, 

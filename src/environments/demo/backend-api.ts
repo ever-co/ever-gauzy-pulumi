@@ -3,7 +3,7 @@ import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   backendPort,
-  sslCertificateARN  
+  sslCoCertificateARN as sslCertificateARN
 } from "../../config";
 
 export const createBackendAPI = async (
@@ -14,7 +14,8 @@ export const createBackendAPI = async (
 ) => {
 
   // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
-  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-api", {
+  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-api-demo", {
+    name: "gauzy-api-demo",
     securityGroups: cluster.securityGroups,
     external: true,    
     enableHttp2: true,
@@ -23,7 +24,8 @@ export const createBackendAPI = async (
   });
 
   // This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
-  const apiBackendTarget = alb.createTargetGroup("gauzy-api-target", {
+  const apiBackendTarget = alb.createTargetGroup("gauzy-api-demo-target", {
+    name: "gauzy-api-demo-target",
     port: backendPort,
     protocol: "HTTP",    
     healthCheck: {      
@@ -36,7 +38,8 @@ export const createBackendAPI = async (
     }
   });
 
-  const backendAPIListener = apiBackendTarget.createListener("gauzy-api", {
+  const backendAPIListener = apiBackendTarget.createListener("gauzy-api-demo", {
+    name: "gauzy-api-demo",
     port: 444,
     protocol: "HTTPS",
     external: true,
@@ -56,6 +59,7 @@ export const createBackendAPI = async (
   // Use the 'build' property to specify a folder that contains a Dockerfile.
   // Pulumi builds the container and pushes to an ECR registry
   const backendAPIService = new awsx.ecs.FargateService(fargateServiceName, {
+    name: fargateServiceName,
     cluster,
     desiredCount: 2,
     securityGroups: cluster.securityGroups,

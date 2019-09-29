@@ -15,7 +15,7 @@ export const setupDemoEnvironment = async (dockerImages: { apiImage: awsx.ecs.Im
   
       const vpc = awsx.ec2.Vpc.getDefault();
   
-      // Create an ECS cluster.
+      // Create an ECS cluster for Demo env
       const cluster = new awsx.ecs.Cluster("gauzy-demo", { 
           vpc,
           name: "gauzy-demo"
@@ -23,14 +23,14 @@ export const setupDemoEnvironment = async (dockerImages: { apiImage: awsx.ecs.Im
   
       const backendAPIResponse = await backendAPI.createBackendAPI(dockerImages.apiImage, cluster, dbHost, port);
       backendAPIResponse.backendAPIListener.endpoint.hostname.apply(async (apiUrl: string) => {                       
-        console.log(`Create API CNAME: ${apiUrl} -> ${config.apiDomain}`);
-        console.log(`API will be available on: ${config.fullApiUrl}`);
+        console.log(`Create API CNAME: ${apiUrl} -> ${config.demoApiDomain}`);
+        console.log(`API will be available on: ${config.fullDemoApiUrl}`);
         
-        const frontendResponse = await frontend.createFrontend(dockerImages.webappImage, cluster, config.fullApiUrl);
+        const frontendResponse = await frontend.createFrontend(dockerImages.webappImage, cluster, config.fullDemoApiUrl);
   
         frontendResponse.frontendListener.endpoint.hostname.apply(async (frontendUrl: string) => {
-          console.log(`Create Web App CNAME: ${frontendUrl} -> ${config.webappDomain}`);                    
-          console.log(`Web App will be available on: ${config.fullWebappUrl}`);
+          console.log(`Create Web App CNAME: ${frontendUrl} -> ${config.demoWebappDomain}`);                    
+          console.log(`Web App will be available on: ${config.fullDemoWebappUrl}`);
         });
       });
       

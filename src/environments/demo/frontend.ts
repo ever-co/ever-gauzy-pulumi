@@ -3,13 +3,14 @@ import * as uuid from "uuid/v4";
 import { Cluster } from "@pulumi/awsx/ecs";
 import {
   frontendPort,
-  sslCertificateARN  
+  sslCoCertificateARN as sslCertificateARN
 } from "../../config";
 
 export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Cluster, apiBaseUrl: string) => {
       
   // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
-  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-web", {
+  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-webapp-demo", {
+    name: "gauzy-webapp-demo",
     securityGroups: cluster.securityGroups,
     external: true,
     enableHttp2: true,
@@ -18,7 +19,8 @@ export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Clust
   });
 
   // This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
-  const webTarget = alb.createTargetGroup("gauzy-web-target", {
+  const webTarget = alb.createTargetGroup("gauzy-webapp-target-demo", {
+    name: "gauzy-webapp-target-demo",
     port: frontendPort,
     protocol: "HTTP",
     healthCheck: {
@@ -32,7 +34,8 @@ export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Clust
   });
 
   // This defines on which protocol/port Gauzy will be publicly accessible
-  const frontendListener = webTarget.createListener("gauzy-web", {
+  const frontendListener = webTarget.createListener("gauzy-webapp-demo", {
+    name: "gauzy-web-demo",
     port: 443,
     protocol: "HTTPS",
     external: true,
@@ -48,6 +51,7 @@ export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Clust
   // Use the 'build' property to specify a folder that contains a Dockerfile.
   // Pulumi builds the container and pushes to an ECR registry  
   const frontendService = new awsx.ecs.FargateService(fargateServiceName, {
+    name: fargateServiceName,
     cluster,
     desiredCount: 2,
     securityGroups: cluster.securityGroups,
