@@ -69,10 +69,12 @@ export const setupProdEnvironment = async (dockerImages: {
     backendAPIResponse.serviceHostname.apply(
       async (serviceHostname: string) => {
         backendAPIResponse.port.apply(async (port: number) => {
-          const appUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
+          const backendApiUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
 
-          console.log(`k8s backend Url: ${appUrl}`);
-
+          backendApiUrl.apply(it => {
+            console.log(`API Url: ${it}`);
+          });
+          
           const frontendResponse = await frontend.createFrontend(
             dockerImages.webappImage,
             cluster,
@@ -83,9 +85,12 @@ export const setupProdEnvironment = async (dockerImages: {
           frontendResponse.serviceHostname.apply(
             async (serviceHostname: string) => {
               frontendResponse.port.apply(async (port: number) => {
-                const appUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
+                
+                const frontendAppUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
 
-                console.log(`k8s frontend Url: ${appUrl}`);
+                frontendAppUrl.apply(it => {
+                  console.log(`Frontend Url: ${it}`);
+                });                
               });
             }
           );
