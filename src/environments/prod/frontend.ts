@@ -3,12 +3,6 @@ import * as awsx from "@pulumi/awsx";
 import * as eks from "@pulumi/eks";
 import * as k8s from "@pulumi/kubernetes";
 
-import * as uuid from "uuid/v4";
-import {
-  frontendPort,
-  sslCoCertificateARN as sslCertificateARN
-} from "../../config";
-
 export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: eks.Cluster, namespaceName: pulumi.Output<string>, apiBaseUrl: string) => {
       
   const name = "gauzy-webapp-prod";

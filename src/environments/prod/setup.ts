@@ -26,8 +26,9 @@ export const setupProdEnvironment = async (dockerImages: {
 
     const allVpcSubnetsIds = vpc.privateSubnetIds.concat(vpc.publicSubnetIds);
 
-    // Create the EKS cluster, including a "gp2"-backed StorageClass and a deployment of the Kubernetes dashboard.
-    const cluster = new eks.Cluster("gauzy-prod", {
+    // Create the EKS cluster, including a "gp2"-backed StorageClass
+    const cluster = new eks.Cluster("gauzy-prod", {      
+      version: "1.14",
       vpcId: vpc.id,
       subnetIds: allVpcSubnetsIds,
       instanceType: "t3.medium",
@@ -35,7 +36,6 @@ export const setupProdEnvironment = async (dockerImages: {
       minSize: 1,
       maxSize: 2,
       storageClasses: "gp2",
-      deployDashboard: true,
       enabledClusterLogTypes: [
         "api",
         "audit",
@@ -52,7 +52,8 @@ export const setupProdEnvironment = async (dockerImages: {
     // NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
     const ns = new k8s.core.v1.Namespace(
       "gauzy-prod",
-      {},
+      {        
+      },
       { provider: cluster.provider }
     );
 

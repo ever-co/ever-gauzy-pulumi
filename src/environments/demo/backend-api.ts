@@ -62,7 +62,7 @@ export const createBackendAPI = async (
   const backendAPIService = new awsx.ecs.FargateService(fargateServiceName, {
     name: fargateServiceName,
     cluster,
-    desiredCount: 2,
+    desiredCount: 1,
     securityGroups: cluster.securityGroups,
     taskDefinitionArgs: {
       containers: {

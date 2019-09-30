@@ -53,7 +53,7 @@ export const createFrontend = async (webappImage: awsx.ecs.Image, cluster: Clust
   const frontendService = new awsx.ecs.FargateService(fargateServiceName, {
     name: fargateServiceName,
     cluster,
-    desiredCount: 2,
+    desiredCount: 1,
     securityGroups: cluster.securityGroups,
     taskDefinitionArgs: {
       containers: {

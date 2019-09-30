@@ -2,18 +2,6 @@ import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as eks from "@pulumi/eks";
 import * as k8s from "@pulumi/kubernetes";
-import * as aws from "@pulumi/aws";
-import * as uuid from "uuid/v4";
-import * as config from "../../config";
-import { Cluster } from "@pulumi/awsx/ecs";
-import {
-  backendPort,
-  sslCoCertificateARN as sslCertificateARN,
-  dockerContextPath,
-  dockerAPIFile  
-} from "../../config";
-import { Environment } from "../environments";
-
 
 export const createBackendAPI = async (
   apiImage: awsx.ecs.Image,
@@ -44,9 +32,22 @@ export const createBackendAPI = async (
 
   const image = "nginx";
 
+  // for production, we should always explicitly set secure DB credentials
+  const dbName = <string>process.env.DB_NAME;
+  const dbUser = <string>process.env.DB_USER;
+  const dbPassword = <string>process.env.DB_PASS;
+
   const container = {
     name,                            
     image,
+    env: [
+      { name: "DB_TYPE", value: "postgres" },
+      { name: "DB_HOST", value: dbHost },
+      { name: "DB_PORT", value: dbPort.toString() },
+      { name: "DB_PASS", value: dbPassword },
+      { name: "DB_USER", value: dbUser },
+      { name: "DB_NAME", value: dbName }
+    ],
     /*
     requests: {
       cpu: "100m",
@@ -82,7 +83,7 @@ export const createBackendAPI = async (
   };
 
   const deployment = new k8s.apps.v1.Deployment(name,
-    {
+    {      
         metadata: {
             namespace: namespaceName,
             labels: appLabels,
@@ -113,7 +114,7 @@ export const createBackendAPI = async (
   const isMinikube = config.require("isMinikube");
 
   const service = new k8s.core.v1.Service(name,
-    {
+    {      
         metadata: {
             labels: appLabels,
             namespace: namespaceName,
