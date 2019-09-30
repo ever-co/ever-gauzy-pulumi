@@ -4,7 +4,7 @@ Note: WIP, but already useful :)
 
 ## Introduction
 
-- This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`).
+- This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up --yes`).
 - It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
 - Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
 
@@ -14,7 +14,7 @@ Note: WIP, but already useful :)
 - Setup AWS CLI locally
 - Configure cloud credentials locally with `aws configure` and create AWS profile: `ever` (or replace AWS profile name in Pulumi.*.yaml files)
 - Change (optionally) Pulumi Stack with `pulumi stack select dev`, where `dev` is stack name.
-- Deploy to Cloud: `pulumi up`
+- Deploy to Cloud: `pulumi up --yes`
 - Enjoy
 
 Note: different stacks may use different services, e.g. AWS EKS (k8s) for `prod` (production) stack, AWS ECS Fargate for `demo` stack or AWS ECS container instances (with EC2) for `dev` stack.
@@ -75,7 +75,7 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 
 - Removed resource manually in the Cloud? Run `pulumi refresh`
 
-## Pulumi related Open-Source projects
+## Pulumi related Open-Source projects and Examples
 
 - Github Pulumi Actions: see <https://github.com/pulumi/actions> and <https://www.pulumi.com/docs/guides/continuous-delivery/github-actions>
 - <https://github.com/cappalyst/cappalyst-pulumi>
@@ -83,6 +83,9 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 - <https://github.com/jen20/pulumi-aws-vpc>
 - <https://github.com/ibrasho/pulumi-github>
 - <https://github.com/k-higuchi0440/pulumi-aws-staticsite-builder>
+- <https://github.com/pulumi/examples/tree/master/kubernetes-ts-jenkins> - this seems to be very good solution to run Jenkins in k8s with Pulumi
+- <https://github.com/pulumi/examples/tree/master/kubernetes-ts-multicloud> - multi-cloud deployment for k8s
+- <https://github.com/pulumi/examples/tree/master/kubernetes-ts-sock-shop> - lots of micro-services and DBs (including Mongo / MySQL / RabbitMQ queue, etc)
 
 ## Contribute
 

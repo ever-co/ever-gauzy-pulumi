@@ -11,7 +11,7 @@ export const createBackendAPI = async (
   apiImage: awsx.ecs.Image,
   cluster: Cluster,
   dbHost: string,
-  port: number
+  dbPort: number
 ) => {
 
   // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
@@ -74,7 +74,7 @@ export const createBackendAPI = async (
           environment: [
             { name: "DB_TYPE", value: "postgres" },
             { name: "DB_HOST", value: dbHost },
-            { name: "DB_PORT", value: port.toString() },
+            { name: "DB_PORT", value: dbPort.toString() },
             { name: "DB_PASS", value: dbPassword },
             { name: "DB_USER", value: dbUser },
             { name: "DB_NAME", value: dbName }

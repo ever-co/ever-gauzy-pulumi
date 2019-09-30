@@ -10,7 +10,7 @@ export const createBackendAPI = async (
   apiImage: awsx.ecs.Image,
   cluster: Cluster,
   dbHost: string,
-  port: number
+  dbPort: number
 ) => {       
    
    // We don't really need LBs for Dev, however ECS does not support auto-assign of public IP with EC2 launch type, so it's more easy to just create LBs
@@ -68,7 +68,7 @@ export const createBackendAPI = async (
           environment: [
             { name: "DB_TYPE", value: "postgres" },
             { name: "DB_HOST", value: dbHost },
-            { name: "DB_PORT", value: port.toString() },
+            { name: "DB_PORT", value: dbPort.toString() },
             { name: "DB_PASS", value: dbPassword },
             { name: "DB_USER", value: dbUser },
             { name: "DB_NAME", value: dbName }
