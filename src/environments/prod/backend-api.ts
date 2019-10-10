@@ -17,7 +17,7 @@ export const createBackendAPI = async (
     appClass: name,
     tier: "backend"
   };
-  
+
   // for production, we should always explicitly set secure DB credentials
   const dbName = <string>process.env.DB_NAME;
   const dbUser = <string>process.env.DB_USER;
@@ -34,30 +34,28 @@ export const createBackendAPI = async (
       { name: "DB_USER", value: dbUser },
       { name: "DB_NAME", value: dbName }
     ],
-    /*
     requests: {
-      cpu: "100m",
-      memory: "1900Mi",
+      cpu: "200m",
+      memory: "1000Mi"
     },
-    */
     /*
     livenessProbe: {
       httpGet: {
-          path: "/",
-          port: "http",
+        path: "/api/hello",
+        port: "http"
       },
       initialDelaySeconds: 180,
-      timeoutSeconds: 5,
-      failureThreshold: 6,
+      timeoutSeconds: 120,
+      failureThreshold: 10
     },
     readinessProbe: {
       httpGet: {
-          path: "/",
-          port: "http",
+        path: "/api/hello",
+        port: "http"
       },
       initialDelaySeconds: 90,
-      timeoutSeconds: 5,
-      periodSeconds: 6,
+      timeoutSeconds: 120,
+      periodSeconds: 10
     },
     */
     ports: [
@@ -76,7 +74,7 @@ export const createBackendAPI = async (
         labels: appLabels
       },
       spec: {
-        replicas: 1,
+        replicas: 0,
         selector: { matchLabels: appLabels },
         template: {
           metadata: {
@@ -111,8 +109,8 @@ export const createBackendAPI = async (
         type: isMinikube === "true" ? "ClusterIP" : "LoadBalancer",
         ports: [
           {
-            port: 80,
-            targetPort: "http"
+            port: config.backendPort // 80,
+            // targetPort: "http"
           }
         ],
         selector: appLabels

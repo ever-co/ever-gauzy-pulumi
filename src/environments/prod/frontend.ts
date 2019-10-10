@@ -16,7 +16,7 @@ export const createFrontend = async (
     appClass: name,
     tier: "frontend"
   };
-    
+
   const container = {
     name,
     image: webappImage.imageValue,
@@ -26,10 +26,28 @@ export const createFrontend = async (
         value: apiBaseUrl
       }
     ],
-    /*
     requests: {
-      cpu: "100m",
-      memory: "1900Mi",
+      cpu: "200m",
+      memory: "1000Mi"
+    },
+    /*
+    livenessProbe: {
+      httpGet: {
+        path: "/",
+        port: "http"
+      },
+      initialDelaySeconds: 180,
+      timeoutSeconds: 120,
+      failureThreshold: 10
+    },
+    readinessProbe: {
+      httpGet: {
+        path: "/",
+        port: "http"
+      },
+      initialDelaySeconds: 90,
+      timeoutSeconds: 120,
+      periodSeconds: 10
     },
     */
     ports: [
@@ -48,7 +66,7 @@ export const createFrontend = async (
         labels: appLabels
       },
       spec: {
-        replicas: 1,
+        replicas: 0,
         selector: { matchLabels: appLabels },
         template: {
           metadata: {
@@ -81,7 +99,12 @@ export const createFrontend = async (
         // Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
         // running on minikube, and if so, create only services of type ClusterIP.
         type: isMinikube === "true" ? "ClusterIP" : "LoadBalancer",
-        ports: [{ port: 80, targetPort: "http" }],
+        ports: [
+          {
+            port: config.frontendPort //, 80
+            // targetPort: "http"
+          }
+        ],
         selector: appLabels
       }
     },

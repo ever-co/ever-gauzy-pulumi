@@ -10,8 +10,11 @@ Note: WIP, but already useful :)
 
 ## Quick start
 
-- [Setup pulumi locally](https://www.pulumi.com/docs/reference/install)
-- Setup AWS CLI locally
+- Setup [Docker](https://docs.docker.com/install)
+- Setup [eksctl](https://docs.aws.amazon.com/en_pv/eks/latest/userguide/getting-started-eksctl.html) (if production k8s deployment required)
+- Setup [Helm](https://helm.sh/docs/using_helm/#installing-helm) (if production k8s deployments required). Don't forget to run `helm init`!
+- Setup [Pulumi](https://www.pulumi.com/docs/reference/install)
+- Setup [AWS CLI](https://docs.aws.amazon.com/en_pv/cli/latest/userguide/cli-chap-install.html)
 - Configure cloud credentials locally with `aws configure` and create AWS profile: `ever` (or replace AWS profile name in Pulumi.*.yaml files)
 - Change (optionally) Pulumi Stack with `pulumi stack select dev`, where `dev` is stack name.
 - Deploy to Cloud: `pulumi up --yes`
