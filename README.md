@@ -52,11 +52,11 @@ In addition, Gauzy Platform build with different settings for each environment (
 
 ## TODO
 
+- [ ] What about LBs / SSL with EKS for Gauzy? How better to do it? Maybe just use another LBs or provision nginx in k8s? Needs to think about it more...
+
 - [ ] Setup [Redash](https://github.com/getredash/redash) in the same cluster, see <https://github.com/getredash/redash/blob/master/setup/docker-compose.yml> (optionally, but it's great to have that for Gauzy)
 
 - [ ] Finish setup Github Actions, see <https://github.com/ever-co/gauzy-pulumi/blob/master/.github/workflows/main.yml>
-
-- [ ] Add support for `develop` and `demo` stacks (branches created), WIP
 
 - [ ] Fix CircleCI build for this pulumi project: currently it does not have Docker in the build VM and so stage to build docker containers fails and also we should pull Gauzy repo into sub-folder for Docker builds or found another way. We also should fix PATH to docker files, which is hard-coded now like:
 
@@ -69,7 +69,7 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 
 - [ ] Security Group of Fargate Service should be added to RDS Cluster for full access to RDS DB. Note: it should be done this way: first we create such security group, next we use it when create RDS Cluster and next we use it when create Fargate Cluster
 
-- [ ] for large production we should use k8s (currently we use Fargate), see <https://www.pulumi.com/docs/guides/k8s-the-prod-way> how to setup with Pulumi
+- Must READ: <https://www.pulumi.com/docs/guides/k8s-the-prod-way> (how to setup k8s for production with Pulumi)
 
 ## Pulumi related FAQ
 

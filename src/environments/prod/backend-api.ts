@@ -2,44 +2,30 @@ import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as eks from "@pulumi/eks";
 import * as k8s from "@pulumi/kubernetes";
+import * as config from "../../config";
 
 export const createBackendAPI = async (
-  apiImage: awsx.ecs.Image,
+  apiImage: awsx.ecr.RepositoryImage,
   cluster: eks.Cluster,
   namespaceName: pulumi.Output<string>,
   dbHost: string,
   dbPort: number
-) => {       
-
+) => {
   const name = "gauzy-api-prod";
 
-  const appLabels = { 
+  const appLabels = {
     appClass: name,
     tier: "backend"
   };
   
-  // aws.ecr.getImage().
-
-  /*
-
-  const apiRepoName = `gauzy/api-${Environment.Prod.toLowerCase()}`;
-
-  const image = awsx.ecr.buildAndPushImage(apiRepoName, config.dockerContextPath, { 
-  }, {
-
-  }).image();
-  */
-
-  const image = "nginx";
-
   // for production, we should always explicitly set secure DB credentials
   const dbName = <string>process.env.DB_NAME;
   const dbUser = <string>process.env.DB_USER;
   const dbPassword = <string>process.env.DB_PASS;
 
   const container = {
-    name,                            
-    image,
+    name,
+    image: apiImage.imageValue,
     env: [
       { name: "DB_TYPE", value: "postgres" },
       { name: "DB_HOST", value: dbHost },
@@ -75,78 +61,77 @@ export const createBackendAPI = async (
     },
     */
     ports: [
-      { 
+      {
         name: "http",
-        containerPort: 80 // TODO: replace with `backendPort`
-      }      
-    ],
+        containerPort: config.backendPort
+      }
+    ]
   };
 
-  const deployment = new k8s.apps.v1.Deployment(name,
-    {      
-        metadata: {
-            namespace: namespaceName,
-            labels: appLabels,
-        },
-        spec: {
-            replicas: 1,
-            selector: { matchLabels: appLabels },
-            template: {
-                metadata: {
-                    labels: appLabels,
-                },
-                spec: {
-                    containers: [
-                      container
-                    ],
-                },
-            },
-        },
+  const deployment = new k8s.apps.v1.Deployment(
+    name,
+    {
+      metadata: {
+        namespace: namespaceName,
+        labels: appLabels
+      },
+      spec: {
+        replicas: 1,
+        selector: { matchLabels: appLabels },
+        template: {
+          metadata: {
+            labels: appLabels
+          },
+          spec: {
+            containers: [container]
+          }
+        }
+      }
     },
     {
-        provider: cluster.provider,
+      provider: cluster.provider
     }
-);
+  );
 
   // Create a LoadBalancer Service
 
-  const config = new pulumi.Config();
-  const isMinikube = config.require("isMinikube");
+  const pulumiConfig = new pulumi.Config();
+  const isMinikube = pulumiConfig.require("isMinikube");
 
-  const service = new k8s.core.v1.Service(name,
-    {      
-        metadata: {
-            labels: appLabels,
-            namespace: namespaceName,
-        },
-        spec: {
-            // Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
-            // running on minikube, and if so, create only services of type ClusterIP.
-            type: isMinikube === "true" ? "ClusterIP" : "LoadBalancer",  
-            ports: [
-              { 
-                port: 80,
-                targetPort: "http" 
-              }              
-            ],
-            selector: appLabels,
-        },
+  const service = new k8s.core.v1.Service(
+    name,
+    {
+      metadata: {
+        labels: appLabels,
+        namespace: namespaceName
+      },
+      spec: {
+        // Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
+        // running on minikube, and if so, create only services of type ClusterIP.
+        type: isMinikube === "true" ? "ClusterIP" : "LoadBalancer",
+        ports: [
+          {
+            port: 80,
+            targetPort: "http"
+          }
+        ],
+        selector: appLabels
+      }
     },
     {
-        provider: cluster.provider,
-    },
+      provider: cluster.provider
+    }
   );
 
   // return LoadBalancer public Endpoint
-  let serviceHostname:pulumi.Output<string>;
+  let serviceHostname: pulumi.Output<string>;
 
   if (isMinikube === "true") {
     const frontendIp = service.spec.clusterIP;
     serviceHostname = frontendIp;
   } else {
-    serviceHostname = service.status.loadBalancer.ingress[0].hostname;    
+    serviceHostname = service.status.loadBalancer.ingress[0].hostname;
   }
-  
-  return { serviceHostname, port: service.spec.ports[0].port };
 
+  return { serviceHostname, port: service.spec.ports[0].port };
 };

@@ -8,10 +8,7 @@ import { Environment } from "../environments";
 import * as eks from "@pulumi/eks";
 import * as k8s from "@pulumi/kubernetes";
 
-export const setupProdEnvironment = async (dockerImages: {
-  apiImage: awsx.ecs.Image;
-  webappImage: awsx.ecs.Image;
-}) => {
+export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.RepositoryImage; webappImage: awsx.ecr.RepositoryImage; }) => {
   const dbCluster = await db.createPostgreSQLCluster(Environment.Prod);
 
   dbCluster.endpoint.apply(async (dbHost: any) => {
@@ -77,7 +74,7 @@ export const setupProdEnvironment = async (dockerImages: {
           });
           
           const frontendResponse = await frontend.createFrontend(
-            dockerImages.webappImage,
+            dockerImages.webappImage,          
             cluster,
             namespaceName,
             config.fullProdApiUrl
