@@ -49,6 +49,42 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
       cidrBlock: "172.16.0.0/16",
       subnets: [{ type: "public" }, { type: "private" }]
     });
+    
+    // we deploy Serverless DB to default VPC, now we need to create peering between them    
+    // see https://github.com/pulumi/pulumi-aws/blob/master/sdk/nodejs/ec2/peeringConnectionOptions.ts
+    // So we create following Peer Connection:
+    // Requester VPC: RDS VPC
+    // Requester CIDRs: 172.31.0.0/16
+    // Accepter VPC: EKS VPC
+    // Accepter CIDRs: 172.16.0.0/16
+    // For DNS we enable both ways resolution for now
+
+    const vpcDb = awsx.ec2.Vpc.getDefault();
+    
+    const vpcPeeringConnection = new aws.ec2.VpcPeeringConnection("vpc-peering", {
+      autoAccept: true,
+      peerVpcId: vpc.id,
+      vpcId: vpcDb.id      
+    });
+    
+    const peeringConnectionOptions = new aws.ec2.PeeringConnectionOptions("vpc-peering", {      
+          accepter: {            
+              allowClassicLinkToRemoteVpc: true,
+              allowVpcToRemoteClassicLink: true,
+              allowRemoteVpcDnsResolution: true
+           },
+           requester: {
+              allowRemoteVpcDnsResolution: true,
+              allowClassicLinkToRemoteVpc: true,
+              allowVpcToRemoteClassicLink: true              
+           },           
+           vpcPeeringConnectionId: vpcPeeringConnection.id           
+    });
+
+    // TODO: for each of EKS VPC route tables, we need to add following:
+    // Destination: 172.31.0.0/16, Target: pcx-0d0361d11b98223e4 (peer connection)
+    // For RDS VPC route tables, we need to add following:
+    // Destination: 172.16.0.0/16, Target: pcx-0d0361d11b98223e4 (peer connection)
 
     const allVpcSubnetsIds = vpc.privateSubnetIds.concat(vpc.publicSubnetIds);
 
@@ -58,9 +94,9 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
       vpcId: vpc.id,
       subnetIds: allVpcSubnetsIds,
       instanceType: "t3.medium",
-      desiredCapacity: 4,
+      desiredCapacity: 2,
       minSize: 1,
-      maxSize: 4,
+      maxSize: 2,
       storageClasses: "gp2",
       enabledClusterLogTypes: [
         "api",
@@ -72,7 +108,9 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
       skipDefaultNodeGroup: false
     });
 
-    // run `kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=default:kubernetes-dashboard`
+    // We are using https://github.com/helm/charts/tree/master/stable/kubernetes-dashboard    
+    
+    // Run `kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=default:kubernetes-dashboard`
     // (note: not secure enough, but fine for testing)
 
     // Dashboard should be available at http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login
@@ -81,7 +119,12 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
     // Next, to get token run following command:
     // kubectl -n kube-system describe secrets `kubectl -n kube-system get secrets | awk '/clusterrole-aggregation-controller/ {print $1}'` | awk '/token:/ {print $2}'
     // (you need to use bash)
-    
+
+    // See also:
+    // - https://github.com/kubernetes/dashboard/issues/2474
+    // - https://github.com/pulumi/pulumi-kubernetes/issues/600
+    // - https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/README.md
+
     const k8sDashboardChart = new k8s.helm.v2.Chart("kubernetes-dashboard", {
       repo: "stable",
       chart: "kubernetes-dashboard"      
@@ -113,6 +156,8 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
     backendAPIResponse.serviceHostname.apply(
       async (serviceHostname: string) => {
         backendAPIResponse.port.apply(async (port: number) => {
+
+          // e.g. http://af91c38e5e3cd11e9a4af1292f67fc7d-708947058.us-east-1.elb.amazonaws.com:3000
           const backendApiUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
 
           backendApiUrl.apply(it => {
@@ -130,6 +175,7 @@ export const setupProdEnvironment = async (dockerImages: { apiImage: awsx.ecr.Re
             async (serviceHostname: string) => {
               frontendResponse.port.apply(async (port: number) => {
                 
+                // e.g. http://a07be926ce3ce11e9a4af1292f67fc7d-278090253.us-east-1.elb.amazonaws.com:4200
                 const frontendAppUrl = pulumi.interpolate`http://${serviceHostname}:${port}`;
 
                 frontendAppUrl.apply(it => {

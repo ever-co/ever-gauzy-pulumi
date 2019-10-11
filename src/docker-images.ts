@@ -33,7 +33,7 @@ export const createDockerImages = async (environment: Environment) => {
       apiRepoName,
       {
         context: config.dockerContextPath,
-        dockerfile: config.dockerWebappFile
+        dockerfile: config.dockerAPIFile
       },
       { repository: repositoryApi }
     );

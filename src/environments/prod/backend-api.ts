@@ -35,8 +35,8 @@ export const createBackendAPI = async (
       { name: "DB_NAME", value: dbName }
     ],
     requests: {
-      cpu: "200m",
-      memory: "1000Mi"
+      cpu: "100m",
+      memory: "1900Mi"
     },
     /*
     livenessProbe: {
@@ -61,7 +61,8 @@ export const createBackendAPI = async (
     ports: [
       {
         name: "http",
-        containerPort: config.backendPort
+        containerPort: config.backendPort,
+        protocol: "TCP"
       }
     ]
   };
@@ -74,7 +75,7 @@ export const createBackendAPI = async (
         labels: appLabels
       },
       spec: {
-        replicas: 0,
+        replicas: 1,
         selector: { matchLabels: appLabels },
         template: {
           metadata: {

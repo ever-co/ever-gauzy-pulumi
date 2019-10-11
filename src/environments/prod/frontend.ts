@@ -27,8 +27,8 @@ export const createFrontend = async (
       }
     ],
     requests: {
-      cpu: "200m",
-      memory: "1000Mi"
+      cpu: "100m",
+      memory: "1900Mi"
     },
     /*
     livenessProbe: {
@@ -53,7 +53,8 @@ export const createFrontend = async (
     ports: [
       {
         name: "http",
-        containerPort: config.frontendPort
+        containerPort: config.frontendPort,
+        protocol: "TCP"
       }
     ]
   };
@@ -66,7 +67,7 @@ export const createFrontend = async (
         labels: appLabels
       },
       spec: {
-        replicas: 0,
+        replicas: 1,
         selector: { matchLabels: appLabels },
         template: {
           metadata: {

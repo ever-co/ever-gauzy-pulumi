@@ -30,14 +30,17 @@ export const fullDevApiUrl: string = `https://${devApiDomain}:${devApiPort}`;
 export const devWebappDomain: string = 'app.gauzy.dev';
 export const fullDevWebappUrl: string = 'https://' + devWebappDomain;
 
-// Prod API will be on https://api.gauzy.co:444
-export const prodApiPort: number = 444;
+// Prod API will be on http://api.gauzy.co:3000
+// TODO: configure LB in k8s for port 80 and change 3000 to 80! Also we need to add SSL.
+export const prodApiPort: number = 3000;
 export const prodApiDomain: string = 'api.gauzy.co';
 export const fullProdApiUrl: string = `https://${prodApiDomain}:${prodApiPort}`;
 
-// Prod App will be on https://app.gauzy.co
+// Prod App will be on http://app.gauzy.co:4200
+// TODO: configure LB in k8s for port 80 and change 4200 to 80! Also we need to add SSL.
+export const prodWebappPort: number = 4200;
 export const prodWebappDomain: string = 'app.gauzy.co';
-export const fullProdWebappUrl: string = 'https://' + prodWebappDomain;
+export const fullProdWebappUrl: string = `https://${prodWebappDomain}:${prodWebappPort}`;
 
 // ARN of certificate for your domain (subdomain/wildcard), e.g. for gauzy.co and *.gauzy.co
 // Should be requested manually in AWS
