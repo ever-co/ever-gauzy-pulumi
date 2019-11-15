@@ -291,7 +291,7 @@
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
   integrity sha1-p3c2C1s5oaLlEG+OhY8v0tBgxXA=
 
-"@pulumi/aws@^0.18.0", "@pulumi/aws@^0.18.24":
+"@pulumi/aws@^0.18.24":
   version "0.18.27"
   resolved "https://registry.yarnpkg.com/@pulumi/aws/-/aws-0.18.27.tgz#49085cf0fe0beb07b79d807ab84bf604eace7e17"
   integrity sha512-jrtgV3hfxsebttliQxBGGZaUSwiJsgc0VlpIaJPrggMOi1pDPYDlYRPUS2PRi972gE6C1ddBlViRisdqVF9UAg==
@@ -303,7 +303,19 @@
     read-package-tree "^5.2.1"
     resolve "^1.7.1"
 
-"@pulumi/aws@^1.0.0-beta", "@pulumi/aws@^1.1.0":
+"@pulumi/aws@^1.0.0", "@pulumi/aws@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@pulumi/aws/-/aws-1.8.0.tgz#81d4f351313e5e8aa900872c26559663d21442ab"
+  integrity sha512-wPEFObM0bMl9u9nRdcxH23c7wdpsDvYaUP9rg7GOkG41dnRA5tjpxaC06gyYJX2bVrp2OTgPvlvtz8qicktXjQ==
+  dependencies:
+    "@pulumi/pulumi" "^1.0.0"
+    aws-sdk "^2.0.0"
+    builtin-modules "3.0.0"
+    mime "^2.0.0"
+    read-package-tree "^5.2.1"
+    resolve "^1.7.1"
+
+"@pulumi/aws@^1.0.0-beta":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@pulumi/aws/-/aws-1.1.0.tgz#b6ee98c5fa9aad4725484ea1d57697137452f3bd"
   integrity sha512-o92iKgVcotg+5kwwQfuSFMWZs+bUv5u6VeW/G5Xtj2pBwz+2EUd0jT3k3gKathh+qkdBYU9P8EDITsgOBFGPJQ==
@@ -327,50 +339,50 @@
     deasync "^0.1.15"
     mime "^2.0.0"
 
-"@pulumi/awsx@^0.18.10":
-  version "0.18.10"
-  resolved "https://registry.yarnpkg.com/@pulumi/awsx/-/awsx-0.18.10.tgz#bc72849024ae6e74a29b5ab7fc26cb2eab2f61a1"
-  integrity sha512-O/xoftGzOKGMi/A9ctzIvhoFSpjY+RDnkb0RgvhMzgnVif2GbCrjNrFafTcvmC0v7fR2o0PbuKJmln7uktBYDQ==
+"@pulumi/awsx@^0.18.13":
+  version "0.18.13"
+  resolved "https://registry.yarnpkg.com/@pulumi/awsx/-/awsx-0.18.13.tgz#4c5cd1f3c5bf4e5841bf48cf6feb4f4e42cab366"
+  integrity sha512-c7u6tZDk10g23ZUa/O1ftmMfSvhyZkPz9ASuCEZD2uFgrVi4QQiGAOTRCuCczShjpmrm+CZ1Mq0TVN5J3atChQ==
   dependencies:
-    "@pulumi/aws" "^1.0.0-beta"
+    "@pulumi/aws" "^1.0.0"
     "@pulumi/docker" "^0.17.3"
-    "@pulumi/pulumi" "^1.0.0-beta"
+    "@pulumi/pulumi" "^1.0.0"
     "@types/aws-lambda" "^8.10.23"
     deasync "^0.1.15"
     mime "^2.0.0"
 
-"@pulumi/cloud-aws@^0.18.1":
-  version "0.18.1"
-  resolved "https://registry.yarnpkg.com/@pulumi/cloud-aws/-/cloud-aws-0.18.1.tgz#2a5963a8188b494ebad5dfec2be58e7a5b5b0acc"
-  integrity sha512-Co2FQ89ROJIseGU7W3miSM/7TCH7yVWTmOZfel8Moo5bgRrFS4nFMAzwvnXw9/LR3K210oKh8sJvjbvTHF1+cg==
+"@pulumi/cloud-aws@^0.18.2":
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/@pulumi/cloud-aws/-/cloud-aws-0.18.2.tgz#87bcee13d61c959a7ab6d700e7ef6423a2a28945"
+  integrity sha512-5zoEd2UAwF2t/Uhpu/d2K7Z7rQHQJIVbrJiQLYqwu299zWOMq1D5FjWtEsN2/JvmqE5eQKgOClYYDULLNLtodw==
   dependencies:
-    "@pulumi/aws" "^0.18.0"
+    "@pulumi/aws" "^1.0.0"
     "@pulumi/awsx" "^0.18.0"
-    "@pulumi/cloud" v0.18.1
+    "@pulumi/cloud" v0.18.2
     "@pulumi/docker" "^0.17.0"
-    "@pulumi/pulumi" "^0.17.4"
+    "@pulumi/pulumi" "^1.0.0"
     aws-serverless-express "^3.3.5"
     mime "^2.0.3"
     semver "^5.4.0"
 
-"@pulumi/cloud@^0.18.1", "@pulumi/cloud@v0.18.1":
-  version "0.18.1"
-  resolved "https://registry.yarnpkg.com/@pulumi/cloud/-/cloud-0.18.1.tgz#ee4ff3552e634f5f79aaf69d0f11155f8b63e5a9"
-  integrity sha512-o3gCkaJ0lLLTckYKMedUb7L877l2ffOENEFDlZIWJZ4Ubtxt5gRNiP9scXLkETLY+tOddQj8Wf7QYXj1ObxkIA==
-  dependencies:
-    "@pulumi/pulumi" "^0.17.4"
-
-"@pulumi/cloudflare@^0.17.14":
-  version "0.17.14"
-  resolved "https://registry.yarnpkg.com/@pulumi/cloudflare/-/cloudflare-0.17.14.tgz#753216061b62652092ccf2eab173ef8d41bdb2eb"
-  integrity sha512-XMqY2ZePcFitVt1Vz8cYmZj+uHfr3pJ3B9GCm5vZYYpK7HQM+P+9zo1YnkDLmelbgVjOPOdWTdtuDDvpvZY6JA==
+"@pulumi/cloud@^0.18.2", "@pulumi/cloud@v0.18.2":
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/@pulumi/cloud/-/cloud-0.18.2.tgz#93344ca54a2a11e7bff5612016d7d0e0bd3a089f"
+  integrity sha512-R7Q13yWSTtnCmOnqXv90/SrhoNg1rP4OgGM7w2jeKjBuyxeJBPZ/Pte9qWuyNU8MYZbSe5NkBjbuk/o+IWDLxw==
   dependencies:
     "@pulumi/pulumi" "^1.0.0"
 
-"@pulumi/datadog@0.18.11":
-  version "0.18.11"
-  resolved "https://registry.yarnpkg.com/@pulumi/datadog/-/datadog-0.18.11.tgz#95ca88d66911bca39d403384f94ab6ab641a8bec"
-  integrity sha512-z4a91OAFeqE87cBrAhLyLcgG16YbB/hDDTwWxjr/I6Np7X+eUaJjsKRDfi1DdoEyIpML/GKeMR0HBX+sBEKY4w==
+"@pulumi/cloudflare@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@pulumi/cloudflare/-/cloudflare-1.2.0.tgz#d70cd20d4eb77aef5117e81d92cd5c723e42d4a6"
+  integrity sha512-CE6wCnHOzpOY/xVfFW2W4zVgvOzksS7D09V1Cc5S27ofLnxhFIBrz2EEAB7Hy25htZGVNnmmBuM1gQCL7jA3fw==
+  dependencies:
+    "@pulumi/pulumi" "^1.0.0"
+
+"@pulumi/datadog@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@pulumi/datadog/-/datadog-1.1.0.tgz#4205f0f5814ddd9ee6a24c62dae108f10a730722"
+  integrity sha512-f+wXu/07gHREVFK53rHkLEl1BYBiOFynAsHZjWLgGKu7SDgyqGUATiq1bHuCguc+pZC007lKWP/4jazfQ/neew==
   dependencies:
     "@pulumi/pulumi" "^1.0.0"
 
@@ -390,10 +402,10 @@
     "@pulumi/pulumi" "^1.0.0"
     semver "^5.4.0"
 
-"@pulumi/eks@^0.18.14":
-  version "0.18.14"
-  resolved "https://registry.yarnpkg.com/@pulumi/eks/-/eks-0.18.14.tgz#f9941c11b21556fd5c516d08118296a19be6715b"
-  integrity sha512-tkVZ6OtXk3LgwUgI8zAntZ8uvhBWjxSKFMKH7agzKuKsDzps1GJTWvSRr9XHb665V43pyWFn/EjMntC8IxZcBA==
+"@pulumi/eks@^0.18.16":
+  version "0.18.16"
+  resolved "https://registry.yarnpkg.com/@pulumi/eks/-/eks-0.18.16.tgz#b0596eb1c8224181bea2ff283ddfdb87926ece57"
+  integrity sha512-tHzpnnbQUsw51kiE71RpMBvyGKHMY8shhBYcXBQao7j/LWmwcV9QL+RzpRjM1uQf41z/T8Yn0d1XP3RLKNShKQ==
   dependencies:
     "@pulumi/aws" "^1.0.0-beta"
     "@pulumi/kubernetes" "^1.0.0-beta"
@@ -418,7 +430,7 @@
     shell-quote "^1.6.1"
     tmp "^0.0.33"
 
-"@pulumi/pulumi@^0.17.23", "@pulumi/pulumi@^0.17.27", "@pulumi/pulumi@^0.17.4":
+"@pulumi/pulumi@^0.17.23", "@pulumi/pulumi@^0.17.27":
   version "0.17.28"
   resolved "https://registry.yarnpkg.com/@pulumi/pulumi/-/pulumi-0.17.28.tgz#26f27c0075685b98647263565bfe8bb12adc0542"
   integrity sha512-pVKahH9Ryl6wIpzdOKjsu2gEshDCA7elB34paJpPXw+3ARViSPri7y/2uTdmMRg36jsbrOdNGEohKJEqIZLioA==
@@ -458,10 +470,10 @@
     typescript "^3.0.0"
     upath "^1.1.0"
 
-"@pulumi/pulumi@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@pulumi/pulumi/-/pulumi-1.1.0.tgz#d7eb3953206ff25b950069ad325493b9d90256de"
-  integrity sha512-onVOAKo2H1WgyT6v1053CrHNjpoCbyj7Pq4DYORk7Uc6cTFGkI7wJhs7dUDVLlx+RUXSxIo+q4oAHz7bIVWZNw==
+"@pulumi/pulumi@^1.5.2":
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/@pulumi/pulumi/-/pulumi-1.5.2.tgz#e721c086d9dc4de015bf63da1ea8cfe382771f52"
+  integrity sha512-bXndJF7pYqDdHHro3YngaEiYHGskJh1GUpmOxi9glTuMMsb/6YiclokxcTnsuZk91Tl+sopke6AHQutXrxjN+A==
   dependencies:
     "@pulumi/query" "^0.3.0"
     deasync "^0.1.15"
@@ -475,7 +487,7 @@
     semver "^6.1.0"
     source-map-support "^0.4.16"
     ts-node "^7.0.0"
-    typescript "^3.0.0"
+    typescript "=3.6.3"
     upath "^1.1.0"
 
 "@pulumi/query@^0.3.0":
@@ -2334,10 +2346,10 @@ dotenv@^5.0.1:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-5.0.1.tgz#a5317459bd3d79ab88cff6e44057a6a3fbb1fcef"
   integrity sha512-4As8uPrjfwb7VXC+WnLCbXK7y+Ueb2B3zgNCePYfhxS1PYeaO1YTeplffTEcbfLhvFNGLAz90VvJs9yomG7bow==
 
-dotenv@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.1.0.tgz#d811e178652bfb8a1e593c6dd704ec7e90d85ea2"
-  integrity sha512-GUE3gqcDCaMltj2++g6bRQ5rBJWtkWTmqmD0fo1RnnMuUqHNCt2oTPeDnS9n6fKYvlhn7AeBkb38lymBtWBQdA==
+dotenv@^8.2.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.2.0.tgz#97e619259ada750eea3e4ea3e26bceea5424b16a"
+  integrity sha512-8sJ78ElpbDJBHNeBzUbUVLsqKdccaa/BXF1uPTw3GrvQTBgrQrtObr2mUrE38vzYd8cEv+m/JBfDLioYcfXoaw==
 
 dotnet-deps-parser@4.5.2:
   version "4.5.2"
@@ -6085,15 +6097,15 @@ prettier-tslint@^0.4.2:
     tslint "^5.9.1"
     yargs "^11.0.0"
 
-prettier@^1.18.2:
-  version "1.18.2"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.18.2.tgz#6823e7c5900017b4bd3acf46fe9ac4b4d7bda9ea"
-  integrity sha512-OeHeMc0JhFE9idD4ZdtNibzY0+TPHSpSSb9h8FqtP+YnoZZ1sl8Vc9b1sasjfymH3SonAF4QcA2+mzHPhMvIiw==
+prettier@^1.19.1:
+  version "1.19.1"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.19.1.tgz#f7d7f5ff8a9cd872a7be4ca142095956a60797cb"
+  integrity sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==
 
-pretty-quick@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/pretty-quick/-/pretty-quick-2.0.0.tgz#fe3cf9b677c40e2ae96244f515239db425040a7a"
-  integrity sha512-PcM4S8nTMloTWl1KRkvkf0wAd4+WMH1Lzysey/xyTF5736bwltVyZXlnzP8l/0qUrpvmtzIpm2ecYiX84Qf5Yg==
+pretty-quick@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/pretty-quick/-/pretty-quick-2.0.1.tgz#417ee605ade98ecc686e72f63b5d28a2c35b43e9"
+  integrity sha512-y7bJt77XadjUr+P1uKqZxFWLddvj3SKY6EU4BuQtMxmmEFSMpbN132pUWdSG1g1mtUfO0noBvn7wBf0BVeomHg==
   dependencies:
     chalk "^2.4.2"
     execa "^2.1.0"
@@ -7918,6 +7930,11 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
+
+typescript@=3.6.3:
+  version "3.6.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.3.tgz#fea942fabb20f7e1ca7164ff626f1a9f3f70b4da"
+  integrity sha512-N7bceJL1CtRQ2RiG0AQME13ksR7DiuQh/QehubYcghzv20tnh+MQnQIuJddTmsbqYj+dztchykemz0zFzlvdQw==
 
 typescript@>=2.8.3:
   version "3.6.4"
