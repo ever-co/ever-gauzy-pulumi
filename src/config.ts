@@ -33,7 +33,7 @@ export const fullDevWebappUrl: string = 'https://' + devWebappDomain;
 export const prodApiPort: number = 443; // or 3000 for example
 export const prodApiDomain: string = 'api.gauzy.co';
 export const fullProdApiUrl: string =
-	prodApiPort != 443
+	prodApiPort !== 443
 		? `http://${prodApiDomain}:${prodApiPort}`
 		: `https://${prodApiDomain}`;
 
@@ -41,7 +41,7 @@ export const fullProdApiUrl: string =
 export const prodWebappPort: number = 443; // or 4200 for example
 export const prodWebappDomain: string = 'app.gauzy.co';
 export const fullProdWebappUrl: string =
-	prodWebappPort != 443
+	prodWebappPort !== 443
 		? `https://${prodWebappDomain}:${prodWebappPort}`
 		: `https://${prodWebappDomain}`;
 

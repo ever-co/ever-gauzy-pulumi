@@ -23,7 +23,8 @@ export enum Environment {
 	 * Prod Environment / Stack.
 	 * Available on https://app.gauzy.co
 	 * Note 1: this project will provision single env used for multiple tenants, including our own tenant!
-	 * Note 2: we will support fully isolated k8s with namespaces, which will be provisioned by our SaaS platform (private repo)
+	 * Note 2: we will support fully isolated k8s with namespaces,
+	 * which will be provisioned by our SaaS platform (private repo)
 	 * - AWS EKS (Kubernetes), now WIP
 	 */
 	Prod = 'Prod',

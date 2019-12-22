@@ -1,12 +1,12 @@
 import * as aws from '@pulumi/aws';
 import { Pool, Client } from 'pg';
-import { EngineMode } from '@pulumi/aws/rds';
+import { EngineMode, ClusterInstanceArgs, ClusterArgs } from '@pulumi/aws/rds';
 import { Environment } from './environments';
 
 export const getEngineMode = () => {
 	let engineMode: EngineMode = 'provisioned';
 
-	if (process.env.DB_MODE == 'serverless') {
+	if (process.env.DB_MODE === 'serverless') {
 		engineMode = 'serverless';
 	}
 
@@ -16,10 +16,10 @@ export const getEngineMode = () => {
 export const getIsPubliclyAccessible = () => {
 	let dbPubliclyAccessible: any;
 
-	if (process.env.DB_MODE == 'serverless') {
+	if (process.env.DB_MODE === 'serverless') {
 		dbPubliclyAccessible = false;
 	} else {
-		dbPubliclyAccessible = process.env.DB_PUBLICLY_ACCESSIBLE == 'true';
+		dbPubliclyAccessible = process.env.DB_PUBLICLY_ACCESSIBLE === 'true';
 	}
 
 	return dbPubliclyAccessible;
@@ -50,30 +50,58 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 
 	const clusterName = `gauzy-db-${environment.toLowerCase()}`;
 
-	// TODO: not sure yet if we should have different engine modes for production vs dev&demo environments (e.g. serverless / provisioned).
+	// TODO: not sure yet if we should have different engine modes for production
+	// vs dev&demo environments (e.g. serverless / provisioned).
 	// For now we will use settings from environment DB_MODE (default to serverless)
 
-	const postgresqlCluster = new aws.rds.Cluster(clusterName, {
-		availabilityZones: ['us-east-1a', 'us-east-1b', 'us-east-1c'],
-		backupRetentionPeriod: 30,
-		clusterIdentifier: clusterName,
-		skipFinalSnapshot: environment != Environment.Prod,
-		databaseName: dbName,
-		storageEncrypted: true,
-		engine: 'aurora-postgresql',
-		engineVersion: '10.7',
-		masterPassword: dbPassword,
-		masterUsername: dbUser,
-		preferredBackupWindow: '07:00-09:00',
-		deletionProtection: environment == Environment.Prod,
-		engineMode
-	});
+	let clusterArgs: ClusterArgs;
+
+	if (engineMode === 'serverless') {
+		clusterArgs = {
+			availabilityZones: ['us-east-1a', 'us-east-1b', 'us-east-1c'],
+			backupRetentionPeriod: 30,
+			clusterIdentifier: clusterName,
+			skipFinalSnapshot: environment !== Environment.Prod,
+			databaseName: dbName,
+			storageEncrypted: true,
+			engine: 'aurora-postgresql',
+			engineVersion: '10.7',
+			masterPassword: dbPassword,
+			masterUsername: dbUser,
+			preferredBackupWindow: '07:00-09:00',
+			deletionProtection: environment === Environment.Prod,
+			engineMode,
+			scalingConfiguration: {
+				autoPause: false, // make sure serverless does not go to sleep in any environment (it sucks)
+				maxCapacity: 4, // Note: adjust for production
+				minCapacity: 2 // make sure serverless does not lost all instances, ever (it sucks)
+			}
+		};
+	} else {
+		clusterArgs = {
+			availabilityZones: ['us-east-1a', 'us-east-1b', 'us-east-1c'],
+			backupRetentionPeriod: 30,
+			clusterIdentifier: clusterName,
+			skipFinalSnapshot: environment !== Environment.Prod,
+			databaseName: dbName,
+			storageEncrypted: true,
+			engine: 'aurora-postgresql',
+			engineVersion: '10.7',
+			masterPassword: dbPassword,
+			masterUsername: dbUser,
+			preferredBackupWindow: '07:00-09:00',
+			deletionProtection: environment === Environment.Prod,
+			engineMode
+		};
+	}
+
+	const postgresqlCluster = new aws.rds.Cluster(clusterName, clusterArgs);
 
 	// for engineMode: "serverless" we don't need instances
-	if (engineMode == 'provisioned') {
+	if (engineMode === 'provisioned') {
 		const instanceName = `gauzy-db-${environment.toLowerCase()}`;
 
-		new aws.rds.ClusterInstance(`${instanceName}-1`, {
+		const options: ClusterInstanceArgs = {
 			engine: 'aurora-postgresql',
 			engineVersion: postgresqlCluster.engineVersion,
 			applyImmediately: true,
@@ -84,7 +112,12 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			availabilityZone: 'us-east-1a',
 			performanceInsightsEnabled: true,
 			publiclyAccessible
-		});
+		};
+
+		const clusterInstance = new aws.rds.ClusterInstance(
+			`${instanceName}-1`,
+			options
+		);
 	}
 
 	return postgresqlCluster;
@@ -111,10 +144,10 @@ export const check = async (
 
 		const connectionOptions = {
 			user: dbUser,
-			host: host,
+			host,
 			database: dbName,
 			password: dbPassword,
-			port: port
+			port
 		};
 
 		const pool = new Pool(connectionOptions);

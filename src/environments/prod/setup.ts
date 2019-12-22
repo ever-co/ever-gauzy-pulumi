@@ -29,10 +29,13 @@ function createAndAttachRole(name: string): aws.iam.Role {
 	let counter = 0;
 
 	for (const policy of managedPolicyArns) {
-		new aws.iam.RolePolicyAttachment(`${name}-policy-${counter++}`, {
-			policyArn: policy,
-			role: role
-		});
+		const rolePolicyAttachment = new aws.iam.RolePolicyAttachment(
+			`${name}-policy-${counter++}`,
+			{
+				policyArn: policy,
+				role
+			}
+		);
 	}
 
 	return role;
@@ -187,12 +190,13 @@ export const setupProdEnvironment = async (dockerImages: {
 			async (serviceHostname: string) => {
 				backendAPIResponse.port.apply(async (port: number) => {
 					// TODO: Because LB created by k8s itself,
-					// not by Pulumi and pulumi does not wait creation of such LB to be finished, we don't really get now real LB URL...
+					// not by Pulumi and pulumi does not wait creation of such LB to be finished,
+					// we don't really get now real LB URL...
 
 					// e.g. https://af91c38e5e3cd11e9a4af1292f67fc7d-708947058.us-east-1.elb.amazonaws.com
 					// or http://af91c38e5e3cd11e9a4af1292f67fc7d-708947058.us-east-1.elb.amazonaws.com:3000
 					const backendApiUrl =
-						port != 443
+						port !== 443
 							? pulumi.interpolate`http://${serviceHostname}:${port}`
 							: pulumi.interpolate`https://${serviceHostname}`;
 
@@ -208,14 +212,14 @@ export const setupProdEnvironment = async (dockerImages: {
 					);
 
 					frontendResponse.serviceHostname.apply(
-						async (serviceHostname: string) => {
+						async (currentServiceHostname: string) => {
 							frontendResponse.port.apply(
-								async (port: number) => {
+								async (currentPort: number) => {
 									// e.g. http://a07be926ce3ce11e9a4af1292f67fc7d-278090253.us-east-1.elb.amazonaws.com:4200
 									const frontendAppUrl =
-										port != 443
-											? pulumi.interpolate`http://${serviceHostname}:${port}`
-											: pulumi.interpolate`https://${serviceHostname}`;
+										port !== 443
+											? pulumi.interpolate`http://${currentServiceHostname}:${currentPort}`
+											: pulumi.interpolate`https://${currentServiceHostname}`;
 
 									frontendAppUrl.apply((it) => {
 										console.log(`Frontend Url: ${it}`);

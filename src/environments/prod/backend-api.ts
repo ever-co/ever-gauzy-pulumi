@@ -284,7 +284,7 @@ function buildIngressManually(cluster: eks.Cluster) {
 			chart:
 				'http://storage.googleapis.com/kubernetes-charts-incubator/aws-alb-ingress-controller-0.1.11.tgz',
 			values: {
-				clusterName: clusterName,
+				clusterName,
 				autoDiscoverAwsRegion: 'true',
 				autoDiscoverAwsVpcID: 'true'
 			}
