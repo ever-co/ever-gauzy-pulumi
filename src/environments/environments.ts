@@ -6,18 +6,18 @@ import * as pulumi from '@pulumi/pulumi';
  */
 export enum Environment {
 	/**
-	 * Dev Environment / Stack
+	 * Dev Environment / Stack.
 	 * Available on https://app.gauzy.dev
-	 * Implementation:
-	 * - uses ECS container instances, not Fargate.
-	 * - all cluster consist from single t3.medium instance (totally 4Gb RAM, so each docker VM gets 2Gb RAM)
-	 * - 1 Docker container for API, working on port 3000
-	 * - 1 Docker container for Front-end, working on port 4200
-	 * - ALBs (2 load balancers, one for API and one for Front-end)
-	 * - AWS SSL Certificates
-	 * - Serverless Aurora PostgreSQL
+	 * - AWS EKS (Kubernetes), now WIP
 	 */
 	Dev = 'Dev',
+
+	/**
+	 * Demo Environment / Stack.
+	 * Available on https://demo.gauzy.co
+	 * - AWS EKS (Kubernetes), now WIP
+	 */
+	Demo = 'Demo',
 
 	/**
 	 * Prod Environment / Stack.
@@ -30,14 +30,26 @@ export enum Environment {
 	Prod = 'Prod',
 
 	/**
-	 * Demo Environment / Stack.
-	 * Available on https://demo.gauzy.co
+	 * ECS Environment / Stack
+	 * Implementation:
+	 * - uses ECS container instances, not Fargate.
+	 * - all cluster consist from single t3.medium instance (totally 4Gb RAM, so each docker VM gets 2Gb RAM)
+	 * - 1 Docker container for API, working on port 3000
+	 * - 1 Docker container for Front-end, working on port 4200
+	 * - ALBs (2 load balancers, one for API and one for Front-end)
+	 * - AWS SSL Certificates
+	 * - Serverless Aurora PostgreSQL
+	 */
+	ECS = 'ECS',
+
+	/**
+	 * Fargate Environment / Stack.
 	 * - AWS Fargate Services (2 services, one for API and one for Front-end)
 	 * - ALBs (2 load balancers, one for API and one for Front-end)
 	 * - AWS SSL Certificates
 	 * - Serverless Aurora PostgreSQL
 	 */
-	Demo = 'Demo'
+	Fargate = 'Fargate'
 }
 
 /**
@@ -63,6 +75,14 @@ export const getRunningEnvironment = async () => {
 		case 'live':
 		case 'production':
 			environment = Environment.Prod;
+			break;
+
+		case 'ecs':
+			environment = Environment.ECS;
+			break;
+
+		case 'fargate':
+			environment = Environment.Fargate;
 			break;
 
 		default:

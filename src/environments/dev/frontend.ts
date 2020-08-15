@@ -1,67 +1,143 @@
+import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
-import { Cluster } from '@pulumi/awsx/ecs';
-import {
-	frontendPort,
-	sslDevCertificateARN as sslCertificateARN
-} from '../../config';
+import * as eks from '@pulumi/eks';
+import * as k8s from '@pulumi/kubernetes';
+import * as config from '../../config';
 
 export const createFrontend = async (
-	webappImage: awsx.ecs.Image,
-	cluster: Cluster,
+	webappImage: awsx.ecr.RepositoryImage,
+	cluster: eks.Cluster,
+	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
 ) => {
-	// Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
-	const alb = new awsx.lb.ApplicationLoadBalancer('gauzy-webapp-dev', {
-		name: 'gauzy-webapp-dev',
-		securityGroups: cluster.securityGroups,
-		external: true,
-		enableHttp2: true,
-		// this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
-		enableDeletionProtection: false
-	});
+	const name = 'gauzy-webapp-prod';
 
-	// This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
-	const webTarget = alb.createTargetGroup('gauzy-webapp-target-dev', {
-		name: 'gauzy-webapp-target-dev',
-		port: frontendPort,
-		protocol: 'HTTP',
-		healthCheck: {
-			unhealthyThreshold: 10,
-			timeout: 120,
-			interval: 300,
-			path: '/',
-			protocol: 'HTTP',
-			port: frontendPort.toString()
-		}
-	});
+	const appLabels = {
+		appClass: name,
+		tier: 'frontend'
+	};
 
-	// This defines on which protocol/port Gauzy will be publicly accessible
-	const frontendListener = webTarget.createListener('gauzy-webapp-dev', {
-		name: 'gauzy-webapp-dev',
-		port: 443,
-		protocol: 'HTTPS',
-		external: true,
-		certificateArn: sslCertificateARN,
-		sslPolicy: 'ELBSecurityPolicy-2016-08'
-	});
+	const container = {
+		name,
+		image: webappImage.imageValue,
+		env: [
+			{
+				name: 'API_BASE_URL',
+				value: apiBaseUrl
+			}
+		],
+		requests: {
+			cpu: '100m',
+			memory: '1900Mi'
+		},
+		/*
+    livenessProbe: {
+      httpGet: {
+        path: "/",
+        port: "http"
+      },
+      initialDelaySeconds: 180,
+      timeoutSeconds: 120,
+      failureThreshold: 10
+    },
+    readinessProbe: {
+      httpGet: {
+        path: "/",
+        port: "http"
+      },
+      initialDelaySeconds: 90,
+      timeoutSeconds: 120,
+      periodSeconds: 10
+    },
+    */
+		ports: [
+			{
+				name: 'http',
+				containerPort: config.frontendPort,
+				protocol: 'TCP'
+			}
+		]
+	};
 
-	const frontendService = new awsx.ecs.EC2Service('gauzy-webapp-dev', {
-		name: 'gauzy-webapp-dev',
-		cluster,
-		desiredCount: 1,
-		securityGroups: cluster.securityGroups,
-		taskDefinitionArgs: {
-			containers: {
-				frontend: {
-					portMappings: [frontendListener],
-					image: webappImage,
-					cpu: 1024 /*100% of 1024 is 1 vCPU*/,
-					memory: 1900 /*MB*/,
-					environment: [{ name: 'API_BASE_URL', value: apiBaseUrl }]
+	const deployment = new k8s.apps.v1.Deployment(
+		name,
+		{
+			metadata: {
+				namespace: namespaceName,
+				labels: appLabels
+			},
+			spec: {
+				replicas: 1,
+				selector: { matchLabels: appLabels },
+				template: {
+					metadata: {
+						labels: appLabels
+					},
+					spec: {
+						containers: [container]
+					}
 				}
 			}
+		},
+		{
+			provider: cluster.provider
 		}
-	});
+	);
 
-	return { frontendListener, frontendService };
+	// Create a LoadBalancer Service
+
+	const pulumiConfig = new pulumi.Config();
+	const isMinikube = pulumiConfig.require('isMinikube');
+
+	const service = new k8s.core.v1.Service(
+		name,
+		{
+			metadata: {
+				labels: appLabels,
+				namespace: namespaceName,
+				annotations: {
+					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+						'Name=gauzy-frontend-ingress',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+						config.sslCoCertificateARN,
+					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+						'http',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+						'https',
+					'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+						'true',
+					'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+						'5'
+				}
+			},
+			spec: {
+				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
+				// running on minikube, and if so, create only services of type ClusterIP.
+				type: isMinikube === 'true' ? 'ClusterIP' : 'LoadBalancer',
+				ports: [
+					{
+						name: 'https',
+						port: 443,
+						targetPort: 'http'
+					}
+				],
+				selector: appLabels
+			}
+		},
+		{
+			provider: cluster.provider
+		}
+	);
+
+	// return LoadBalancer public Endpoint
+	let serviceHostname: pulumi.Output<string>;
+
+	if (isMinikube === 'true') {
+		const frontendIp = service.spec.clusterIP;
+		serviceHostname = frontendIp;
+	} else {
+		serviceHostname = service.status.loadBalancer.ingress[0].hostname;
+	}
+
+	return { serviceHostname, port: service.spec.ports[0].port };
 };

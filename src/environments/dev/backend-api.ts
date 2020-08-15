@@ -1,88 +1,294 @@
+import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
-import { Cluster } from '@pulumi/awsx/ecs';
-import {
-	backendPort,
-	sslDevCertificateARN as sslCertificateARN,
-	devApiPort
-} from '../../config';
+import * as aws from '@pulumi/aws';
+import * as eks from '@pulumi/eks';
+import * as k8s from '@pulumi/kubernetes';
+import * as config from '../../config';
 
 export const createBackendAPI = async (
-	apiImage: awsx.ecs.Image,
-	cluster: Cluster,
+	apiImage: awsx.ecr.RepositoryImage,
+	cluster: eks.Cluster,
+	namespaceName: pulumi.Output<string>,
 	dbHost: string,
 	dbPort: number
 ) => {
-	// We don't really need LBs for Dev, however ECS does not support auto-assign of public IP with EC2 launch type, so it's more easy to just create LBs
-	// See https://github.com/aws/containers-roadmap/issues/450
+	const name = 'gauzy-api-prod';
 
-	// Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
-	const alb = new awsx.lb.ApplicationLoadBalancer('gauzy-api-dev', {
-		name: 'gauzy-api-dev',
-		securityGroups: cluster.securityGroups,
-		external: true,
-		enableHttp2: true,
-		// this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
-		enableDeletionProtection: false
-	});
+	const appLabels = {
+		appClass: name,
+		tier: 'backend'
+	};
 
-	// This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
-	const apiBackendTarget = alb.createTargetGroup('gauzy-api-dev-target', {
-		name: 'gauzy-api-dev-target',
-		port: backendPort,
-		protocol: 'HTTP',
-		healthCheck: {
-			unhealthyThreshold: 10,
-			timeout: 120,
-			interval: 300,
-			path: '/api/hello',
-			protocol: 'HTTP',
-			port: backendPort.toString()
-		}
-	});
+	// for production, we should always explicitly set secure DB credentials
+	const dbName = <string>process.env.DB_NAME;
+	const dbUser = <string>process.env.DB_USER;
+	const dbPassword = <string>process.env.DB_PASS;
 
-	const backendAPIListener = apiBackendTarget.createListener(
-		'gauzy-api-dev',
+	const container = {
+		name,
+		image: apiImage.imageValue,
+		env: [
+			{ name: 'DB_TYPE', value: 'postgres' },
+			{ name: 'DB_HOST', value: dbHost },
+			{ name: 'DB_PORT', value: dbPort.toString() },
+			{ name: 'DB_PASS', value: dbPassword },
+			{ name: 'DB_USER', value: dbUser },
+			{ name: 'DB_NAME', value: dbName }
+		],
+		requests: {
+			cpu: '100m',
+			memory: '1900Mi'
+		},
+		/*
+    livenessProbe: {
+      httpGet: {
+        path: "/api/hello",
+        port: "http"
+      },
+      initialDelaySeconds: 180,
+      timeoutSeconds: 120,
+      failureThreshold: 10
+    },
+    readinessProbe: {
+      httpGet: {
+        path: "/api/hello",
+        port: "http"
+      },
+      initialDelaySeconds: 90,
+      timeoutSeconds: 120,
+      periodSeconds: 10
+    },
+    */
+		ports: [
+			{
+				name: 'http',
+				containerPort: config.backendPort,
+				protocol: 'TCP'
+			}
+		]
+	};
+
+	const deployment = new k8s.apps.v1.Deployment(
+		name,
 		{
-			name: 'gauzy-api-dev',
-			port: devApiPort,
-			protocol: 'HTTPS',
-			external: true,
-			certificateArn: sslCertificateARN,
-			sslPolicy: 'ELBSecurityPolicy-2016-08'
+			metadata: {
+				namespace: namespaceName,
+				labels: appLabels
+			},
+			spec: {
+				replicas: 1,
+				selector: { matchLabels: appLabels },
+				template: {
+					metadata: {
+						labels: appLabels
+					},
+					spec: {
+						containers: [container]
+					}
+				}
+			}
+		},
+		{
+			provider: cluster.provider
 		}
 	);
 
-	const dbName = process.env.DB_NAME || 'gauzy';
-	const dbUser = process.env.DB_USER
-		? <string>process.env.DB_USER
-		: 'gauzy_user';
-	const dbPassword = process.env.DB_PASS
-		? <string>process.env.DB_PASS
-		: 'change_me';
+	// Create a LoadBalancer Service
 
-	const backendAPIService = new awsx.ecs.EC2Service('gauzy-api-dev', {
-		cluster,
-		desiredCount: 1,
-		securityGroups: cluster.securityGroups,
-		taskDefinitionArgs: {
-			containers: {
-				backendAPI: {
-					portMappings: [backendAPIListener],
-					image: apiImage,
-					cpu: 1024 /*100% of 1024 is 1 vCPU*/,
-					memory: 1900 /*MB*/,
-					environment: [
-						{ name: 'DB_TYPE', value: 'postgres' },
-						{ name: 'DB_HOST', value: dbHost },
-						{ name: 'DB_PORT', value: dbPort.toString() },
-						{ name: 'DB_PASS', value: dbPassword },
-						{ name: 'DB_USER', value: dbUser },
-						{ name: 'DB_NAME', value: dbName }
-					]
+	const pulumiConfig = new pulumi.Config();
+	const isMinikube = pulumiConfig.require('isMinikube');
+
+	const service = new k8s.core.v1.Service(
+		name,
+		{
+			metadata: {
+				labels: appLabels,
+				namespace: namespaceName,
+				annotations: {
+					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+						'Name=gauzy-api-ingress',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+						config.sslCoCertificateARN,
+					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+						'http',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+						'https',
+					'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+						'true',
+					'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+						'5'
 				}
+			},
+			spec: {
+				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
+				// running on minikube, and if so, create only services of type ClusterIP.
+				type: isMinikube === 'true' ? 'ClusterIP' : 'LoadBalancer',
+				ports: [
+					{
+						name: 'https',
+						port: 443,
+						targetPort: 'http'
+					}
+				],
+				selector: appLabels
+			}
+		},
+		{
+			provider: cluster.provider
+		}
+	);
+
+	// return LoadBalancer public Endpoint
+	let serviceHostname: pulumi.Output<string>;
+
+	if (isMinikube === 'true') {
+		const frontendIp = service.spec.clusterIP;
+		serviceHostname = frontendIp;
+	} else {
+		serviceHostname = service.status.loadBalancer.ingress[0].hostname;
+	}
+
+	return { serviceHostname, port: service.spec.ports[0].port };
+};
+
+/**
+ * This function can be used to create ingress for k8s manually with LB and SSL Certificate
+ * See: https://www.pulumi.com/blog/kubernetes-ingress-with-aws-alb-ingress-controller-and-pulumi-crosswalk/
+ * @param cluster
+ */
+function buildIngressManually(cluster: eks.Cluster) {
+	const clusterNodeInstanceRoleName = cluster.instanceRoles.apply(
+		(roles) => roles[0].name
+	);
+
+	const clusterName = cluster.eksCluster.name;
+
+	// Create IAM Policy for the IngressController called "ingressController-iam-policy” and read the policy ARN.
+	const ingressControllerPolicy = new aws.iam.Policy(
+		'ingressController-iam-policy',
+		{
+			policy: {
+				Version: '2012-10-17',
+				Statement: [
+					{
+						Effect: 'Allow',
+						Action: [
+							'acm:DescribeCertificate',
+							'acm:ListCertificates',
+							'acm:GetCertificate'
+						],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: [
+							'ec2:AuthorizeSecurityGroupIngress',
+							'ec2:CreateSecurityGroup',
+							'ec2:CreateTags',
+							'ec2:DeleteTags',
+							'ec2:DeleteSecurityGroup',
+							'ec2:DescribeInstances',
+							'ec2:DescribeInstanceStatus',
+							'ec2:DescribeSecurityGroups',
+							'ec2:DescribeSubnets',
+							'ec2:DescribeTags',
+							'ec2:DescribeVpcs',
+							'ec2:ModifyInstanceAttribute',
+							'ec2:ModifyNetworkInterfaceAttribute',
+							'ec2:RevokeSecurityGroupIngress'
+						],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: [
+							'elasticloadbalancing:AddTags',
+							'elasticloadbalancing:CreateListener',
+							'elasticloadbalancing:CreateLoadBalancer',
+							'elasticloadbalancing:CreateRule',
+							'elasticloadbalancing:CreateTargetGroup',
+							'elasticloadbalancing:DeleteListener',
+							'elasticloadbalancing:DeleteLoadBalancer',
+							'elasticloadbalancing:DeleteRule',
+							'elasticloadbalancing:DeleteTargetGroup',
+							'elasticloadbalancing:DeregisterTargets',
+							'elasticloadbalancing:DescribeListeners',
+							'elasticloadbalancing:DescribeLoadBalancers',
+							'elasticloadbalancing:DescribeLoadBalancerAttributes',
+							'elasticloadbalancing:DescribeRules',
+							'elasticloadbalancing:DescribeSSLPolicies',
+							'elasticloadbalancing:DescribeTags',
+							'elasticloadbalancing:DescribeTargetGroups',
+							'elasticloadbalancing:DescribeTargetGroupAttributes',
+							'elasticloadbalancing:DescribeTargetHealth',
+							'elasticloadbalancing:ModifyListener',
+							'elasticloadbalancing:ModifyLoadBalancerAttributes',
+							'elasticloadbalancing:ModifyRule',
+							'elasticloadbalancing:ModifyTargetGroup',
+							'elasticloadbalancing:ModifyTargetGroupAttributes',
+							'elasticloadbalancing:RegisterTargets',
+							'elasticloadbalancing:RemoveTags',
+							'elasticloadbalancing:SetIpAddressType',
+							'elasticloadbalancing:SetSecurityGroups',
+							'elasticloadbalancing:SetSubnets',
+							'elasticloadbalancing:SetWebACL'
+						],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: [
+							'iam:GetServerCertificate',
+							'iam:ListServerCertificates'
+						],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: [
+							'waf-regional:GetWebACLForResource',
+							'waf-regional:GetWebACL',
+							'waf-regional:AssociateWebACL',
+							'waf-regional:DisassociateWebACL'
+						],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: ['tag:GetResources', 'tag:TagResources'],
+						Resource: '*'
+					},
+					{
+						Effect: 'Allow',
+						Action: ['waf:GetWebACL'],
+						Resource: '*'
+					}
+				]
 			}
 		}
-	});
+	);
 
-	return { backendAPIListener, backendAPIService };
-};
+	// Attach this policy to the NodeInstanceRole of the worker nodes.
+	const nodeinstanceRole = new aws.iam.RolePolicyAttachment(
+		'eks-NodeInstanceRole-policy-attach',
+		{
+			policyArn: ingressControllerPolicy.arn,
+			role: clusterNodeInstanceRoleName
+		}
+	);
+
+	// Declare the ALBIngressController in 1 step with the Helm Chart.
+	const albingresscntlr = new k8s.helm.v2.Chart(
+		'alb',
+		{
+			chart:
+				'http://storage.googleapis.com/kubernetes-charts-incubator/aws-alb-ingress-controller-0.1.11.tgz',
+			values: {
+				clusterName,
+				autoDiscoverAwsRegion: 'true',
+				autoDiscoverAwsVpcID: 'true'
+			}
+		},
+		{ provider: cluster.provider }
+	);
+}
