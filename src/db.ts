@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws';
-import { Pool, Client } from 'pg';
+import * as pulumi from '@pulumi/pulumi';
+import { Pool, Client, PoolConfig } from 'pg';
 import { EngineMode, ClusterInstanceArgs, ClusterArgs } from '@pulumi/aws/rds';
 import { Environment } from './environments';
 
@@ -74,8 +75,8 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			scalingConfiguration: {
 				autoPause: false, // make sure serverless does not go to sleep in any environment (it sucks)
 				maxCapacity: 4, // Note: adjust for production
-				minCapacity: 2 // make sure serverless does not lost all instances, ever (it sucks)
-			}
+				minCapacity: 2, // make sure serverless does not lost all instances, ever (it sucks)
+			},
 		};
 	} else {
 		clusterArgs = {
@@ -91,7 +92,7 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			masterUsername: dbUser,
 			preferredBackupWindow: '07:00-09:00',
 			deletionProtection: environment === Environment.Prod,
-			engineMode
+			engineMode,
 		};
 	}
 
@@ -111,7 +112,7 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			autoMinorVersionUpgrade: true,
 			availabilityZone: 'us-east-1a',
 			performanceInsightsEnabled: true,
-			publiclyAccessible
+			publiclyAccessible,
 		};
 
 		const clusterInstance = new aws.rds.ClusterInstance(
@@ -130,7 +131,7 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
  */
 export const check = async (
 	environment: Environment,
-	host: string,
+	host: pulumi.Output<string>,
 	port: number
 ) => {
 	if (getIsPubliclyAccessible()) {
@@ -142,12 +143,12 @@ export const check = async (
 			? <string>process.env.DB_PASS
 			: 'change_me';
 
-		const connectionOptions = {
+		const connectionOptions: PoolConfig = {
 			user: dbUser,
-			host,
+			host: host.get(),
 			database: dbName,
 			password: dbPassword,
-			port
+			port,
 		};
 
 		const pool = new Pool(connectionOptions);

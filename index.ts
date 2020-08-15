@@ -7,50 +7,59 @@ import {
 	setupDevEnvironment,
 	setupProdEnvironment,
 	setupFargateEnvironment,
-	setupECSEnvironment
+	setupECSEnvironment,
 } from './src/environments';
 import { createDockerImages } from './src/docker-images';
 import { RepositoryImage } from '@pulumi/awsx/ecr';
 
-(async () => {
-	try {
-		const environment = await getRunningEnvironment();
+export = async () => {
+	const environment = await getRunningEnvironment();
 
-		console.log(`Running in ${environment} Environment`);
+	console.log(`Running in ${environment} Environment`);
 
-		const dockerImages = await createDockerImages(environment);
+	const dockerImages = await createDockerImages(environment);
 
-		switch (environment) {
-			case Environment.Fargate:
-				await setupFargateEnvironment(dockerImages);
-				break;
+	let resource;
 
-			case Environment.ECS:
-				await setupECSEnvironment(dockerImages);
-				break;
+	switch (environment) {
+		case Environment.Fargate:
+			// resource = await setupFargateEnvironment(dockerImages);
+			break;
 
-			case Environment.Dev:
-				await setupDevEnvironment({
-					apiImage: <RepositoryImage>dockerImages.apiImage,
-					webappImage: <RepositoryImage>dockerImages.webappImage
-				});
-				break;
+		case Environment.ECS:
+			// resource = await setupECSEnvironment(dockerImages);
+			break;
 
-			case Environment.Demo:
-				await setupDemoEnvironment({
-					apiImage: <RepositoryImage>dockerImages.apiImage,
-					webappImage: <RepositoryImage>dockerImages.webappImage
-				});
-				break;
+		case Environment.Dev:
+			resource = await setupDevEnvironment({
+				apiImage: <RepositoryImage>dockerImages.apiImage,
+				webappImage: <RepositoryImage>dockerImages.webappImage,
+			});
+			break;
 
-			case Environment.Prod:
-				await setupProdEnvironment({
-					apiImage: <RepositoryImage>dockerImages.apiImage,
-					webappImage: <RepositoryImage>dockerImages.webappImage
-				});
-				break;
-		}
-	} catch (err) {
-		console.log(err);
+		case Environment.Demo:
+			/*
+			resource = await setupDemoEnvironment({
+				apiImage: <RepositoryImage>dockerImages.apiImage,
+				webappImage: <RepositoryImage>dockerImages.webappImage
+			});
+			*/
+			break;
+
+		case Environment.Prod:
+			/*
+			resource = await setupProdEnvironment({
+				apiImage: <RepositoryImage>dockerImages.apiImage,
+				webappImage: <RepositoryImage>dockerImages.webappImage
+			});
+			*/
+			break;
 	}
-})();
+
+	return {
+		out: {
+			clusterUrn: resource?.cluster.urn,
+			dbClusterUrn: resource?.dbCluster.urn,
+		},
+	};
+};

@@ -9,14 +9,14 @@ export const createBackendAPI = async (
 	apiImage: awsx.ecr.RepositoryImage,
 	cluster: eks.Cluster,
 	namespaceName: pulumi.Output<string>,
-	dbHost: string,
+	dbHost: pulumi.Output<string>,
 	dbPort: number
 ) => {
 	const name = 'gauzy-api-prod';
 
 	const appLabels = {
 		appClass: name,
-		tier: 'backend'
+		tier: 'backend',
 	};
 
 	// for production, we should always explicitly set secure DB credentials
@@ -29,15 +29,15 @@ export const createBackendAPI = async (
 		image: apiImage.imageValue,
 		env: [
 			{ name: 'DB_TYPE', value: 'postgres' },
-			{ name: 'DB_HOST', value: dbHost },
+			{ name: 'DB_HOST', value: dbHost.get() },
 			{ name: 'DB_PORT', value: dbPort.toString() },
 			{ name: 'DB_PASS', value: dbPassword },
 			{ name: 'DB_USER', value: dbUser },
-			{ name: 'DB_NAME', value: dbName }
+			{ name: 'DB_NAME', value: dbName },
 		],
 		requests: {
 			cpu: '100m',
-			memory: '1900Mi'
+			memory: '1900Mi',
 		},
 		/*
     livenessProbe: {
@@ -63,9 +63,9 @@ export const createBackendAPI = async (
 			{
 				name: 'http',
 				containerPort: config.backendPort,
-				protocol: 'TCP'
-			}
-		]
+				protocol: 'TCP',
+			},
+		],
 	};
 
 	const deployment = new k8s.apps.v1.Deployment(
@@ -73,23 +73,23 @@ export const createBackendAPI = async (
 		{
 			metadata: {
 				namespace: namespaceName,
-				labels: appLabels
+				labels: appLabels,
 			},
 			spec: {
 				replicas: 1,
 				selector: { matchLabels: appLabels },
 				template: {
 					metadata: {
-						labels: appLabels
+						labels: appLabels,
 					},
 					spec: {
-						containers: [container]
-					}
-				}
-			}
+						containers: [container],
+					},
+				},
+			},
 		},
 		{
-			provider: cluster.provider
+			provider: cluster.provider,
 		}
 	);
 
@@ -116,8 +116,8 @@ export const createBackendAPI = async (
 					'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
 						'true',
 					'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
-						'5'
-				}
+						'5',
+				},
 			},
 			spec: {
 				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
@@ -127,14 +127,14 @@ export const createBackendAPI = async (
 					{
 						name: 'https',
 						port: 443,
-						targetPort: 'http'
-					}
+						targetPort: 'http',
+					},
 				],
-				selector: appLabels
-			}
+				selector: appLabels,
+			},
 		},
 		{
-			provider: cluster.provider
+			provider: cluster.provider,
 		}
 	);
 
@@ -175,9 +175,9 @@ function buildIngressManually(cluster: eks.Cluster) {
 						Action: [
 							'acm:DescribeCertificate',
 							'acm:ListCertificates',
-							'acm:GetCertificate'
+							'acm:GetCertificate',
 						],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
@@ -195,9 +195,9 @@ function buildIngressManually(cluster: eks.Cluster) {
 							'ec2:DescribeVpcs',
 							'ec2:ModifyInstanceAttribute',
 							'ec2:ModifyNetworkInterfaceAttribute',
-							'ec2:RevokeSecurityGroupIngress'
+							'ec2:RevokeSecurityGroupIngress',
 						],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
@@ -231,17 +231,17 @@ function buildIngressManually(cluster: eks.Cluster) {
 							'elasticloadbalancing:SetIpAddressType',
 							'elasticloadbalancing:SetSecurityGroups',
 							'elasticloadbalancing:SetSubnets',
-							'elasticloadbalancing:SetWebACL'
+							'elasticloadbalancing:SetWebACL',
 						],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
 						Action: [
 							'iam:GetServerCertificate',
-							'iam:ListServerCertificates'
+							'iam:ListServerCertificates',
 						],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
@@ -249,22 +249,22 @@ function buildIngressManually(cluster: eks.Cluster) {
 							'waf-regional:GetWebACLForResource',
 							'waf-regional:GetWebACL',
 							'waf-regional:AssociateWebACL',
-							'waf-regional:DisassociateWebACL'
+							'waf-regional:DisassociateWebACL',
 						],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
 						Action: ['tag:GetResources', 'tag:TagResources'],
-						Resource: '*'
+						Resource: '*',
 					},
 					{
 						Effect: 'Allow',
 						Action: ['waf:GetWebACL'],
-						Resource: '*'
-					}
-				]
-			}
+						Resource: '*',
+					},
+				],
+			},
 		}
 	);
 
@@ -273,7 +273,7 @@ function buildIngressManually(cluster: eks.Cluster) {
 		'eks-NodeInstanceRole-policy-attach',
 		{
 			policyArn: ingressControllerPolicy.arn,
-			role: clusterNodeInstanceRoleName
+			role: clusterNodeInstanceRoleName,
 		}
 	);
 
@@ -286,8 +286,8 @@ function buildIngressManually(cluster: eks.Cluster) {
 			values: {
 				clusterName,
 				autoDiscoverAwsRegion: 'true',
-				autoDiscoverAwsVpcID: 'true'
-			}
+				autoDiscoverAwsVpcID: 'true',
+			},
 		},
 		{ provider: cluster.provider }
 	);

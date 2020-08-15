@@ -239,4 +239,6 @@ export const setupProdEnvironment = async (dockerImages: {
 			}
 		);
 	});
+
+	return dbCluster;
 };

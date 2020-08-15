@@ -20,7 +20,7 @@ export const setupECSEnvironment = async (dockerImages: {
 		// Create an ECS cluster for Dev env
 		const cluster = new awsx.ecs.Cluster('gauzy-dev', {
 			vpc,
-			name: 'gauzy-dev'
+			name: 'gauzy-dev',
 		});
 
 		// create single auto-scaling group for both API and Front-end, but it will be limited to just 1 instance for Dev env
@@ -28,11 +28,11 @@ export const setupECSEnvironment = async (dockerImages: {
 			subnetIds: vpc.publicSubnetIds,
 			templateParameters: {
 				minSize: 1,
-				maxSize: 1
+				maxSize: 1,
 			},
 			launchConfigurationArgs: {
-				instanceType: 't3.medium'
-			}
+				instanceType: 't3.medium',
+			},
 		});
 
 		const backendAPIResponse = await backendAPI.createBackendAPI(
@@ -69,4 +69,6 @@ export const setupECSEnvironment = async (dockerImages: {
 			}
 		);
 	});
+
+	return dbCluster;
 };
