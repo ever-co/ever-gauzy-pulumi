@@ -1,10 +1,10 @@
 import * as awsx from '@pulumi/awsx';
-import * as uuid from 'uuid/v4';
+import * as uuid from 'uuid';
 import { Cluster } from '@pulumi/awsx/ecs';
 import {
 	backendPort,
 	sslCoCertificateARN as sslCertificateARN,
-	demoApiPort
+	demoApiPort,
 } from '../../config';
 
 export const createBackendAPI = async (
@@ -20,7 +20,7 @@ export const createBackendAPI = async (
 		external: true,
 		enableHttp2: true,
 		// this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
-		enableDeletionProtection: false
+		enableDeletionProtection: false,
 	});
 
 	// This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
@@ -34,8 +34,8 @@ export const createBackendAPI = async (
 			interval: 300,
 			path: '/api/hello',
 			protocol: 'HTTP',
-			port: backendPort.toString()
-		}
+			port: backendPort.toString(),
+		},
 	});
 
 	const backendAPIListener = apiBackendTarget.createListener(
@@ -46,11 +46,11 @@ export const createBackendAPI = async (
 			protocol: 'HTTPS',
 			external: true,
 			certificateArn: sslCertificateARN,
-			sslPolicy: 'ELBSecurityPolicy-2016-08'
+			sslPolicy: 'ELBSecurityPolicy-2016-08',
 		}
 	);
 
-	const fargateServiceName = 'gauzy-api-' + uuid().split('-')[0];
+	const fargateServiceName = 'gauzy-api-' + uuid.v4().split('-')[0];
 
 	console.log(`Backend API Fargate Service Name ${fargateServiceName}`);
 
@@ -83,12 +83,12 @@ export const createBackendAPI = async (
 						{ name: 'DB_PORT', value: dbPort.toString() },
 						{ name: 'DB_PASS', value: dbPassword },
 						{ name: 'DB_USER', value: dbUser },
-						{ name: 'DB_NAME', value: dbName }
-					]
+						{ name: 'DB_NAME', value: dbName },
+					],
 					// command: ["redis-server", "--requirepass", redisPassword], - can be some command?
-				}
-			}
-		}
+				},
+			},
+		},
 	});
 
 	return { backendAPIListener, backendAPIService };

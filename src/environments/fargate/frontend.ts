@@ -1,9 +1,9 @@
 import * as awsx from '@pulumi/awsx';
-import * as uuid from 'uuid/v4';
+import * as uuid from 'uuid';
 import { Cluster } from '@pulumi/awsx/ecs';
 import {
 	frontendPort,
-	sslCoCertificateARN as sslCertificateARN
+	sslCoCertificateARN as sslCertificateARN,
 } from '../../config';
 
 export const createFrontend = async (
@@ -18,7 +18,7 @@ export const createFrontend = async (
 		external: true,
 		enableHttp2: true,
 		// this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
-		enableDeletionProtection: false
+		enableDeletionProtection: false,
 	});
 
 	// This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
@@ -32,8 +32,8 @@ export const createFrontend = async (
 			interval: 300,
 			path: '/',
 			protocol: 'HTTP',
-			port: frontendPort.toString()
-		}
+			port: frontendPort.toString(),
+		},
 	});
 
 	// This defines on which protocol/port Gauzy will be publicly accessible
@@ -43,10 +43,10 @@ export const createFrontend = async (
 		protocol: 'HTTPS',
 		external: true,
 		certificateArn: sslCertificateARN,
-		sslPolicy: 'ELBSecurityPolicy-2016-08'
+		sslPolicy: 'ELBSecurityPolicy-2016-08',
 	});
 
-	const fargateServiceName = 'gauzy-webapp-' + uuid().split('-')[0];
+	const fargateServiceName = 'gauzy-webapp-' + uuid.v4().split('-')[0];
 
 	console.log(`Frontend Fargate Service Name ${fargateServiceName}`);
 
@@ -65,10 +65,10 @@ export const createFrontend = async (
 					cpu: 1024 /*100% of 1024 is 1 vCPU*/,
 					memory: 2048 /*MB*/,
 					portMappings: [frontendListener],
-					environment: [{ name: 'API_BASE_URL', value: apiBaseUrl }]
-				}
-			}
-		}
+					environment: [{ name: 'API_BASE_URL', value: apiBaseUrl }],
+				},
+			},
+		},
 	});
 
 	return { frontendListener, frontendService };

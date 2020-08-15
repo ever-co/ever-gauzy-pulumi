@@ -12,7 +12,7 @@ import * as k8s from '@pulumi/kubernetes';
 const managedPolicyArns: string[] = [
 	'arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy',
 	'arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy',
-	'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly'
+	'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly',
 ];
 
 /**
@@ -22,8 +22,8 @@ const managedPolicyArns: string[] = [
 function createAndAttachRole(name: string): aws.iam.Role {
 	const role = new aws.iam.Role(name, {
 		assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-			Service: 'ec2.amazonaws.com'
-		})
+			Service: 'ec2.amazonaws.com',
+		}),
 	});
 
 	let counter = 0;
@@ -33,7 +33,7 @@ function createAndAttachRole(name: string): aws.iam.Role {
 			`${name}-policy-${counter++}`,
 			{
 				policyArn: policy,
-				role
+				role,
 			}
 		);
 	}
@@ -62,11 +62,11 @@ export const setupDevEnvironment = async (dockerImages: {
 						// Next tags needed so k8s found public Subnets where to add external ELB
 						// see https://github.com/kubernetes/kubernetes/issues/29298
 						KubernetesCluster: 'gauzy-prod-eksCluster-cc1ca51',
-						'kubernetes.io/role/elb': ''
-					}
+						'kubernetes.io/role/elb': '',
+					},
 				},
-				{ type: 'private' }
-			]
+				{ type: 'private' },
+			],
 		});
 
 		// we deploy Serverless DB to default VPC, now we need to create peering between them
@@ -85,7 +85,7 @@ export const setupDevEnvironment = async (dockerImages: {
 			{
 				autoAccept: true,
 				peerVpcId: vpc.id,
-				vpcId: vpcDb.id
+				vpcId: vpcDb.id,
 			}
 		);
 
@@ -95,14 +95,14 @@ export const setupDevEnvironment = async (dockerImages: {
 				accepter: {
 					allowClassicLinkToRemoteVpc: false,
 					allowVpcToRemoteClassicLink: true,
-					allowRemoteVpcDnsResolution: true
+					allowRemoteVpcDnsResolution: true,
 				},
 				requester: {
 					allowClassicLinkToRemoteVpc: false,
 					allowVpcToRemoteClassicLink: true,
-					allowRemoteVpcDnsResolution: true
+					allowRemoteVpcDnsResolution: true,
 				},
-				vpcPeeringConnectionId: vpcPeeringConnection.id
+				vpcPeeringConnectionId: vpcPeeringConnection.id,
 			}
 		);
 
@@ -111,18 +111,15 @@ export const setupDevEnvironment = async (dockerImages: {
 		// For RDS VPC route tables, we need to add following:
 		// Destination: 172.16.0.0/16, Target: pcx-0d0361d11b98223e4 (peer connection)
 
-		const allVpcSubnetsIds = vpc.privateSubnetIds.concat(
-			vpc.publicSubnetIds
-		);
-
 		// Create the EKS cluster, including a "gp2"-backed StorageClass
 		const cluster = new eks.Cluster('gauzy-prod', {
 			tags: {
-				Name: 'gauzy-prod-eksCluster-cc1ca51'
+				Name: 'gauzy-prod-eksCluster-cc1ca51',
 			},
 			version: '1.14',
 			vpcId: vpc.id,
-			subnetIds: allVpcSubnetsIds,
+			publicSubnetIds: vpc.publicSubnetIds,
+			privateSubnetIds: vpc.privateSubnetIds,
 			instanceType: 't3.medium',
 			desiredCapacity: 2,
 			minSize: 1,
@@ -133,9 +130,9 @@ export const setupDevEnvironment = async (dockerImages: {
 				'audit',
 				'authenticator',
 				'controllerManager',
-				'scheduler'
+				'scheduler',
 			],
-			skipDefaultNodeGroup: false
+			skipDefaultNodeGroup: false,
 		});
 
 		// We are using https://github.com/helm/charts/tree/master/stable/kubernetes-dashboard
@@ -159,7 +156,7 @@ export const setupDevEnvironment = async (dockerImages: {
 			'kubernetes-dashboard',
 			{
 				repo: 'stable',
-				chart: 'kubernetes-dashboard'
+				chart: 'kubernetes-dashboard',
 			},
 			{ providers: { kubernetes: cluster.provider } }
 		);
