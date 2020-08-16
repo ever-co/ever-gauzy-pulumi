@@ -32,8 +32,8 @@ export = async () => {
 
 		case Environment.Dev:
 			resource = await setupDevEnvironment({
-				apiImage: <RepositoryImage>dockerImages.apiImage,
-				webappImage: <RepositoryImage>dockerImages.webappImage,
+				apiImage: dockerImages.apiImage,
+				webappImage: dockerImages.webappImage,
 			});
 			break;
 
@@ -55,11 +55,4 @@ export = async () => {
 			*/
 			break;
 	}
-
-	return {
-		out: {
-			clusterUrn: resource?.cluster.urn,
-			dbClusterUrn: resource?.dbCluster.urn,
-		},
-	};
 };

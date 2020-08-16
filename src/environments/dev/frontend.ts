@@ -5,30 +5,30 @@ import * as k8s from '@pulumi/kubernetes';
 import * as config from '../../config';
 
 export const createFrontend = async (
-	webappImage: awsx.ecr.RepositoryImage,
-	cluster: eks.Cluster,
+	webappImage: string,
+	provider: k8s.Provider,
 	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
 ) => {
-	const name = 'gauzy-webapp-prod';
+	const name = 'gauzy-webapp-dev';
 
 	const appLabels = {
 		appClass: name,
-		tier: 'frontend'
+		tier: 'frontend',
 	};
 
 	const container = {
 		name,
-		image: webappImage.imageValue,
+		image: webappImage,
 		env: [
 			{
 				name: 'API_BASE_URL',
-				value: apiBaseUrl
-			}
+				value: apiBaseUrl,
+			},
 		],
 		requests: {
 			cpu: '100m',
-			memory: '1900Mi'
+			memory: '1900Mi',
 		},
 		/*
     livenessProbe: {
@@ -54,9 +54,9 @@ export const createFrontend = async (
 			{
 				name: 'http',
 				containerPort: config.frontendPort,
-				protocol: 'TCP'
-			}
-		]
+				protocol: 'TCP',
+			},
+		],
 	};
 
 	const deployment = new k8s.apps.v1.Deployment(
@@ -64,23 +64,23 @@ export const createFrontend = async (
 		{
 			metadata: {
 				namespace: namespaceName,
-				labels: appLabels
+				labels: appLabels,
 			},
 			spec: {
 				replicas: 1,
 				selector: { matchLabels: appLabels },
 				template: {
 					metadata: {
-						labels: appLabels
+						labels: appLabels,
 					},
 					spec: {
-						containers: [container]
-					}
-				}
-			}
+						containers: [container],
+					},
+				},
+			},
 		},
 		{
-			provider: cluster.provider
+			provider: provider,
 		}
 	);
 
@@ -95,20 +95,20 @@ export const createFrontend = async (
 			metadata: {
 				labels: appLabels,
 				namespace: namespaceName,
-				annotations: {
-					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
-						'Name=gauzy-frontend-ingress',
-					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
-						config.sslCoCertificateARN,
-					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
-						'http',
-					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
-						'https',
-					'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
-						'true',
-					'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
-						'5'
-				}
+				// annotations: {
+				// 	'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+				// 		'Name=gauzy-frontend-ingress',
+				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+				// 		config.sslCoCertificateARN,
+				// 	'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+				// 		'http',
+				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+				// 		'https',
+				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+				// 		'true',
+				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+				// 		'5'
+				// }
 			},
 			spec: {
 				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
@@ -118,14 +118,14 @@ export const createFrontend = async (
 					{
 						name: 'https',
 						port: 443,
-						targetPort: 'http'
-					}
+						targetPort: 'http',
+					},
 				],
-				selector: appLabels
-			}
+				selector: appLabels,
+			},
 		},
 		{
-			provider: cluster.provider
+			provider: provider,
 		}
 	);
 

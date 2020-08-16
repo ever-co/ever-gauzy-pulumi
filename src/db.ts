@@ -77,6 +77,10 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 				maxCapacity: 4, // Note: adjust for production
 				minCapacity: 2, // make sure serverless does not lost all instances, ever (it sucks)
 			},
+			finalSnapshotIdentifier: 'final-snapshot',
+			tags: {
+				Name: 'gauzy-rds',
+			},
 		};
 	} else {
 		clusterArgs = {
@@ -93,9 +97,12 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			preferredBackupWindow: '07:00-09:00',
 			deletionProtection: environment === Environment.Prod,
 			engineMode,
+			finalSnapshotIdentifier: 'final-snapshot',
+			tags: {
+				Name: 'gauzy-rds',
+			},
 		};
 	}
-
 	const postgresqlCluster = new aws.rds.Cluster(clusterName, clusterArgs);
 
 	// for engineMode: "serverless" we don't need instances
@@ -120,7 +127,6 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			options
 		);
 	}
-
 	return postgresqlCluster;
 };
 
