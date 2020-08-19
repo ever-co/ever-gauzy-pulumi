@@ -27,6 +27,7 @@ export const createBackendAPI = async (
 	const container = {
 		name,
 		image: apiImage,
+		imagePullPolicy: 'Always',
 		env: [
 			{ name: 'DB_TYPE', value: 'postgres' },
 			{ name: 'DB_HOST', value: dbHost.apply((dbHost) => dbHost) },
@@ -36,8 +37,8 @@ export const createBackendAPI = async (
 			{ name: 'DB_NAME', value: dbName },
 		],
 		requests: {
-			cpu: '100m',
-			memory: '1900Mi',
+			cpu: '2000m',
+			memory: '4000Mi',
 		},
 		/*
     livenessProbe: {

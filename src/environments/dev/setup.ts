@@ -135,16 +135,16 @@ export const setupDevEnvironment = async (dockerImages: {
 		},
 	});
 	// Associate all subnets into the EKS route table
-	(await subnets).ids.forEach(async (subnetId) => {
-		// const routeTable = await aws.ec2.getRouteTable({ subnetId: subnetId });
-		const eksSubnetAssociation = new aws.ec2.RouteTableAssociation(
-			`eks-subnet-route-${subnetId}`,
-			{
-				routeTableId: (await vpc).mainRouteTableId,
-				subnetId: subnetId,
-			}
-		);
-	});
+	// (await subnets).ids.forEach(async (subnetId) => {
+	// 	// const routeTable = await aws.ec2.getRouteTable({ subnetId: subnetId });
+	// 	const eksSubnetAssociation = new aws.ec2.RouteTableAssociation(
+	// 		`eks-subnet-route-${subnetId}`,
+	// 		{
+	// 			routeTableId: (await vpc).mainRouteTableId,
+	// 			subnetId: subnetId,
+	// 		}
+	// 	);
+	// });
 
 	// Update Route tables for EKS and RDS
 	const eksRoutingRule = new aws.ec2.Route('eks-routing-rule-rds', {
