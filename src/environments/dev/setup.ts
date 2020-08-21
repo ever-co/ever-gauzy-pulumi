@@ -6,40 +6,7 @@ import * as config from '../../config';
 import * as backendAPI from './backend-api';
 import * as frontend from './frontend';
 import { Environment } from '../environments';
-import * as eks from '@pulumi/eks';
 import * as k8s from '@pulumi/kubernetes';
-
-const managedPolicyArns: string[] = [
-	'arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy',
-	'arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy',
-	'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly',
-];
-
-/**
- * Creates a role and attaches IAM managed policies to the EKS worker node
- * @param name
- */
-function createAndAttachRole(name: string): aws.iam.Role {
-	const role = new aws.iam.Role(name, {
-		assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-			Service: 'ec2.amazonaws.com',
-		}),
-	});
-
-	let counter = 0;
-
-	for (const policy of managedPolicyArns) {
-		const rolePolicyAttachment = new aws.iam.RolePolicyAttachment(
-			`${name}-policy-${counter++}`,
-			{
-				policyArn: policy,
-				role,
-			}
-		);
-	}
-
-	return role;
-}
 
 export const setupDevEnvironment = async (dockerImages: {
 	apiImage: string;
@@ -47,57 +14,13 @@ export const setupDevEnvironment = async (dockerImages: {
 }) => {
 	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod);
 
-	// Allocate a new VPC with custom settings, and a public & private subnet per AZ.
-	// const vpc = new awsx.ec2.Vpc(
-	// 	'gauzy-prod-vpc',
-	// 	{
-	// 		cidrBlock: '172.16.0.0/16',
-	// 		subnets: [
-	// 			{
-	// 				type: 'public',
-	// 				tags: {
-	// 					// TODO: we need to know AWS Cluster name to put in here!!!
-	// 					// Next tags needed so k8s found public Subnets where to add external ELB
-	// 					// see https://github.com/kubernetes/kubernetes/issues/29298
-	// 					KubernetesCluster: 'ever-dev',
-	// 					'kubernetes.io/role/elb': '',
-	// 				},
-	// 			},
-	// 			{ type: 'private' },
-	// 		],
-	// 	},
-	// 	{ dependsOn: dbCluster }
-	// );
 	const vpc = aws.ec2.getVpc({
 		tags: {
 			Name: 'ever-dev',
 		},
 	});
-	// we deploy Serverless DB to default VPC, now we need to create peering between them
-	// see https://github.com/pulumi/pulumi-aws/blob/master/sdk/nodejs/ec2/peeringConnectionOptions.ts
-	// So we create following Peer Connection:
-	// Requester VPC: RDS VPC
-	// Requester CIDRs: 172.31.0.0/16
-	// Accepter VPC: EKS VPC
-	// Accepter CIDRs: 172.16.0.0/16
-	// For DNS we enable both ways resolution for now
 
 	const vpcDb = awsx.ec2.Vpc.getDefault();
-	// const vpcDb = new awsx.ec2.Vpc('rds-vpc', {
-	// 	cidrBlock: '10.0.0.0/24',
-	// 	subnets: [
-	// 		{
-	// 			name: 'rds-private-subnet',
-	// 			type: 'private',
-	// 			tags: {
-	// 				Name: 'rds-private-subnet',
-	// 			},
-	// 		},
-	// 	],
-	// 	tags: {
-	// 		Name: 'rds-vpc',
-	// 	},
-	// });
 
 	const vpcPeeringConnection = new aws.ec2.VpcPeeringConnection(
 		'vpc-peering',
@@ -127,16 +50,19 @@ export const setupDevEnvironment = async (dockerImages: {
 			vpcPeeringConnectionId: vpcPeeringConnection.id,
 		}
 	);
+
 	// Get private subnets of the EKS VPC
 	const subnets = aws.ec2.getSubnetIds({
 		vpcId: (await vpc).id,
 	});
+
 	// Update routing tables of all subnets within the EKS VPC to allow connection to RDS
 	(await subnets).ids.forEach(async (subnetId) => {
 		const routeTableId = aws.ec2.getRouteTable({
 			vpcId: (await vpc).id,
-			subnetId: subnetId,
+			subnetId,
 		});
+
 		const routeRule = new aws.ec2.Route(`eks-route-${subnetId}`, {
 			routeTableId: (await routeTableId).id,
 			destinationCidrBlock: vpcDb.vpc.cidrBlock,
@@ -156,12 +82,14 @@ export const setupDevEnvironment = async (dockerImages: {
 		destinationCidrBlock: (await vpc).cidrBlock,
 		vpcPeeringConnectionId: vpcPeeringConnection.id,
 	});
+
 	const privateSubnets = aws.ec2.getSubnetIds({
 		vpcId: (await vpc).id,
 		tags: {
 			type: 'private',
 		},
 	});
+
 	// Update Security group rules
 	const rdsSecurityRule = new aws.ec2.SecurityGroupRule(
 		'rds-security-group-rule',
@@ -179,18 +107,19 @@ export const setupDevEnvironment = async (dockerImages: {
 			securityGroupId: vpcDb.vpc.defaultSecurityGroupId,
 		}
 	);
-	// TODO: for each of EKS VPC route tables, we need to add following:
-	// Destination: 172.31.0.0/16, Target: pcx-0d0361d11b98223e4 (peer connection)
-	// For RDS VPC route tables, we need to add following:
-	// Destination: 172.16.0.0/16, Target: pcx-0d0361d11b98223e4 (peer connection)
 
 	const cluster = await aws.eks.getCluster({
 		name: 'ever-dev',
 	});
+
 	const cluster_kubeconfig = pulumi
 		.all([cluster.name, cluster.endpoint, cluster.certificateAuthority])
 		.apply(
-			([clusterName, clusterEndpoint, clusterCertificateAuthority]) => {
+			([
+				currentClusterName,
+				clusterEndpoint,
+				clusterCertificateAuthority,
+			]) => {
 				return {
 					apiVersion: 'v1',
 					clusters: [
@@ -225,7 +154,7 @@ export const setupDevEnvironment = async (dockerImages: {
 										'eks',
 										'get-token',
 										'--cluster-name',
-										clusterName,
+										currentClusterName,
 									],
 									command: 'aws',
 								},
@@ -235,69 +164,12 @@ export const setupDevEnvironment = async (dockerImages: {
 				};
 			}
 		);
+
 	const name = 'gauzy';
+
 	const provider = new k8s.Provider(`${name}-eks-k8s`, {
 		kubeconfig: cluster_kubeconfig.apply(JSON.stringify),
 	});
-	// Create the EKS cluster, including a "gp2"-backed StorageClass
-	// const cluster = new eks.Cluster('ever-dev', {
-	// name: 'ever-dev',
-	// vpcId: vpc.id,
-	// publicSubnetIds: vpc.publicSubnetIds,
-	// privateSubnetIds: vpc.privateSubnetIds,
-	// storageClasses: 'gp2',
-	// instanceType: 'm5.xlarge',
-	// desiredCapacity: 3,
-	// minSize: 1,
-	// maxSize: 3,
-	// version:'1.17',
-	// providerCredentialOpts: {
-	// profileName: "default",
-	// },
-	// enabledClusterLogTypes: [
-	// 'api',
-	// 'audit',
-	// 'authenticator',
-	// 'controllerManager',
-	// 'scheduler'
-	// ],
-	// skipDefaultNodeGroup: false,
-	// tags: {
-	// Name: 'ever-dev',
-	// }
-	// }, /*{ protect: true } */);
-
-	// We are using https://github.com/helm/charts/tree/master/stable/kubernetes-dashboard
-
-	// Run `kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=default:kubernetes-dashboard`
-	// (note: not secure enough, but fine for testing)
-
-	// Dashboard should be available at http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login
-	// after running `kubectl proxy`
-
-	// Next, to get token run following command:
-	// kubectl -n kube-system describe secrets `kubectl -n kube-system get secrets | awk '/clusterrole-aggregation-controller/ {print $1}'` | awk '/token:/ {print $2}'
-	// (you need to use bash)
-
-	// See also:
-	// - https://github.com/kubernetes/dashboard/issues/2474
-	// - https://github.com/pulumi/pulumi-kubernetes/issues/600
-	// - https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/README.md
-	// Role binding for kubernetes-dashboard
-
-	// NOTE: THIS IS DEPRECATED AND DOESNT WORK ANYMORE
-	// const k8sDashboardChart = new k8s.helm.v2.Chart(
-	// 	'kubernetes-dashboard',
-	// 	{
-	// 		repo: 'stable',
-	// 		chart: 'kubernetes-dashboard',
-	// 	},
-	// 	{ providers: { kubernetes: provider } }
-	// );
-	// const kubeconfig = cluster.kubeconfig;
-
-	// const clusterName = cluster.core.cluster.name;
-	const clusterName = cluster.name;
 
 	// Create a Kubernetes Namespace for our production app API and front-end
 	// NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
@@ -308,7 +180,7 @@ export const setupDevEnvironment = async (dockerImages: {
 				name: 'gauzy-dev',
 			},
 		},
-		{ provider: provider }
+		{ provider }
 	);
 
 	const namespaceName = ns.metadata.name;
@@ -325,21 +197,6 @@ export const setupDevEnvironment = async (dockerImages: {
 		port
 	);
 
-	// TODO: Because LB created by k8s itself,
-	// not by Pulumi and pulumi does not wait creation of such LB to be finished,
-	// we don't really get now real LB URL...
-
-	// e.g. https://af91c38e5e3cd11e9a4af1292f67fc7d-708947058.us-east-1.elb.amazonaws.com
-	// or http://af91c38e5e3cd11e9a4af1292f67fc7d-708947058.us-east-1.elb.amazonaws.com:3000
-	// const backendApiUrl =
-	// 	port !== 443
-	// 		? pulumi.interpolate`http://${backendAPIResponse.serviceHostname.get()}:${backendAPIResponse.port.get()}`
-	// 		: pulumi.interpolate`https://${backendAPIResponse.serviceHostname.get()}`;
-
-	// backendApiUrl.apply((it) => {
-	// 	console.log(`API Url: ${it}`);
-	// });
-
 	const frontendResponse = await frontend.createFrontend(
 		dockerImages.webappImage,
 		provider,
@@ -347,23 +204,5 @@ export const setupDevEnvironment = async (dockerImages: {
 		config.fullProdApiUrl
 	);
 
-	// e.g. http://a07be926ce3ce11e9a4af1292f67fc7d-278090253.us-east-1.elb.amazonaws.com:4200
-	// const frontendAppUrl =
-	// port !== 443
-	// ? pulumi.interpolate`http://${frontendResponse.serviceHostname.get()}:${frontendResponse.port.get()}`
-	// : pulumi.interpolate`https://${frontendResponse.serviceHostname.get()}`;
-
-	// frontendAppUrl.apply((it) => {
-	// 	console.log(`Frontend Url: ${it}`);
-	// });
-
-	// kubeconfig.apply((it) => {
-	// console.log(`KubeConfig: ${JSON.stringify(it)}`);
-	// });
-
-	// clusterName.apply((it) => {
-	// console.log(`ClusterName: ${JSON.stringify(it)}`);
-	// });
-
-	return { dbCluster, cluster };
+	return { dbCluster, cluster, frontendResponse, backendAPIResponse };
 };

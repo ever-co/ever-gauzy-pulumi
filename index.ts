@@ -10,7 +10,6 @@ import {
 	setupECSEnvironment,
 } from './src/environments';
 import { createDockerImages } from './src/docker-images';
-import { RepositoryImage } from '@pulumi/awsx/ecr';
 
 export = async () => {
 	const environment = await getRunningEnvironment();
@@ -38,21 +37,17 @@ export = async () => {
 			break;
 
 		case Environment.Demo:
-			/*
 			resource = await setupDemoEnvironment({
-				apiImage: <RepositoryImage>dockerImages.apiImage,
-				webappImage: <RepositoryImage>dockerImages.webappImage
+				apiImage: dockerImages.apiImage,
+				webappImage: dockerImages.webappImage,
 			});
-			*/
 			break;
 
 		case Environment.Prod:
-			/*
 			resource = await setupProdEnvironment({
-				apiImage: <RepositoryImage>dockerImages.apiImage,
-				webappImage: <RepositoryImage>dockerImages.webappImage
+				apiImage: dockerImages.apiImage,
+				webappImage: dockerImages.webappImage,
 			});
-			*/
 			break;
 	}
 };

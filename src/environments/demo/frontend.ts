@@ -1,34 +1,44 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx';
-import * as eks from '@pulumi/eks';
 import * as k8s from '@pulumi/kubernetes';
+import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 export const createFrontend = async (
-	webappImage: awsx.ecr.RepositoryImage,
-	cluster: eks.Cluster,
+	webappImage: string,
+	provider: k8s.Provider,
 	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
 ) => {
-	const name = 'gauzy-webapp-prod';
+	const name = 'gauzy-webapp-dev';
 
 	const appLabels = {
 		appClass: name,
-		tier: 'frontend'
+		tier: 'frontend',
 	};
 
 	const container = {
 		name,
-		image: webappImage.imageValue,
+		image: webappImage,
 		env: [
 			{
 				name: 'API_BASE_URL',
-				value: apiBaseUrl
-			}
+				value: apiBaseUrl,
+			},
+		],
+		volumeMounts: [
+			{
+				name: 'nginx',
+				mountPath: '/etc/nginx/conf.d',
+				readOnly: true,
+			},
 		],
 		requests: {
 			cpu: '100m',
-			memory: '1900Mi'
+			memory: '1000Mi',
+		},
+		limits: {
+			cpu: '400m',
+			memory: '2000Mi',
 		},
 		/*
     livenessProbe: {
@@ -54,33 +64,90 @@ export const createFrontend = async (
 			{
 				name: 'http',
 				containerPort: config.frontendPort,
-				protocol: 'TCP'
-			}
-		]
+				protocol: 'TCP',
+			},
+		],
 	};
+
+	const configmap = new k8s.core.v1.ConfigMap(
+		'webapp-config',
+		{
+			apiVersion: 'v1',
+			kind: 'ConfigMap',
+			metadata: {
+				name: 'nginx',
+				namespace: namespaceName,
+				labels: appLabels,
+			},
+			data: {
+				nginx: `events {
+				worker_connections 1024;
+			  }
+
+			  http {
+				sendfile on;
+				error_log /etc/nginx/logs/error.log warn;
+				client_max_body_size 20m;
+				upstream webapp {
+				  server webapp:4200;
+				}
+
+				upstream api {
+				  server api:3000;
+				}
+
+				server {
+				  listen 8080;
+				  location /api/ {
+					  proxy_pass http://api;
+					}
+
+				  location / {
+					proxy_pass http://webapp;
+				  }
+				}
+			  }`,
+			},
+		},
+		{ provider }
+	);
 
 	const deployment = new k8s.apps.v1.Deployment(
 		name,
 		{
 			metadata: {
 				namespace: namespaceName,
-				labels: appLabels
+				labels: appLabels,
 			},
 			spec: {
 				replicas: 1,
 				selector: { matchLabels: appLabels },
 				template: {
 					metadata: {
-						labels: appLabels
+						labels: appLabels,
 					},
 					spec: {
-						containers: [container]
-					}
-				}
-			}
+						containers: [container],
+						volumes: [
+							{
+								name: 'nginx',
+								configMap: {
+									name: 'nginx',
+									items: [
+										{
+											key: 'nginx',
+											path: 'nginx',
+										},
+									],
+								},
+							},
+						],
+					},
+				},
+			},
 		},
 		{
-			provider: cluster.provider
+			provider,
 		}
 	);
 
@@ -94,6 +161,7 @@ export const createFrontend = async (
 		{
 			metadata: {
 				labels: appLabels,
+				name: 'webapp',
 				namespace: namespaceName,
 				annotations: {
 					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
@@ -104,11 +172,11 @@ export const createFrontend = async (
 						'http',
 					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
 						'https',
-					'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
-						'true',
-					'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
-						'5'
-				}
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+					// 	'true',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+					// 	'5'
+				},
 			},
 			spec: {
 				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
@@ -118,16 +186,23 @@ export const createFrontend = async (
 					{
 						name: 'https',
 						port: 443,
-						targetPort: 'http'
-					}
+						targetPort: 'http',
+					},
 				],
-				selector: appLabels
-			}
+				selector: appLabels,
+			},
 		},
 		{
-			provider: cluster.provider
+			provider,
 		}
 	);
+
+	const webappDns = new cloudflare.Record('webapp-dns', {
+		name: config.prodWebappDomain,
+		type: 'CNAME',
+		value: service.status.loadBalancer.ingress[0].hostname,
+		zoneId: `${process.env.ZONE_ID}`,
+	});
 
 	// return LoadBalancer public Endpoint
 	let serviceHostname: pulumi.Output<string>;

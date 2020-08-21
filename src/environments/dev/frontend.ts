@@ -1,6 +1,4 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx';
-import * as eks from '@pulumi/eks';
 import * as k8s from '@pulumi/kubernetes';
 import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
@@ -70,6 +68,7 @@ export const createFrontend = async (
 			},
 		],
 	};
+
 	const configmap = new k8s.core.v1.ConfigMap(
 		'webapp-config',
 		{
@@ -84,36 +83,35 @@ export const createFrontend = async (
 				nginx: `events {
 				worker_connections 1024;
 			  }
-			  
+
 			  http {
 				sendfile on;
-			  
 				error_log /etc/nginx/logs/error.log warn;
 				client_max_body_size 20m;
-				   
 				upstream webapp {
 				  server webapp:4200;
 				}
-				
+
 				upstream api {
 				  server api:3000;
 				}
-				   
-				server {    
+
+				server {
 				  listen 8080;
 				  location /api/ {
 					  proxy_pass http://api;
 					}
-				  
+
 				  location / {
-					proxy_pass http://webapp;      
+					proxy_pass http://webapp;
 				  }
 				}
 			  }`,
 			},
 		},
-		{ provider: provider }
+		{ provider }
 	);
+
 	const deployment = new k8s.apps.v1.Deployment(
 		name,
 		{
@@ -149,7 +147,7 @@ export const createFrontend = async (
 			},
 		},
 		{
-			provider: provider,
+			provider,
 		}
 	);
 
@@ -195,15 +193,17 @@ export const createFrontend = async (
 			},
 		},
 		{
-			provider: provider,
+			provider,
 		}
 	);
+
 	const webappDns = new cloudflare.Record('webapp-dns', {
 		name: config.prodWebappDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
 		zoneId: `${process.env.ZONE_ID}`,
 	});
+
 	// return LoadBalancer public Endpoint
 	let serviceHostname: pulumi.Output<string>;
 
