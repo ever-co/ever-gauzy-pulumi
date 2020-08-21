@@ -3,6 +3,7 @@ import * as awsx from '@pulumi/awsx';
 import * as aws from '@pulumi/aws';
 import * as eks from '@pulumi/eks';
 import * as k8s from '@pulumi/kubernetes';
+import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 export const createBackendAPI = async (
@@ -37,7 +38,11 @@ export const createBackendAPI = async (
 			{ name: 'DB_NAME', value: dbName },
 		],
 		requests: {
-			cpu: '2000m',
+			cpu: '500m',
+			memory: '3000Mi',
+		},
+		limits: {
+			cpu: '1500m',
 			memory: '4000Mi',
 		},
 		/*
@@ -104,21 +109,22 @@ export const createBackendAPI = async (
 		{
 			metadata: {
 				labels: appLabels,
+				name: 'api',
 				namespace: namespaceName,
-				// annotations: {
-				// 	'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
-				// 		'Name=gauzy-api-ingress',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
-				// 		config.sslCoCertificateARN,
-				// 	'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
-				// 		'http',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
-				// 		'https',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
-				// 		'true',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
-				// 		'5',
-				// },
+				annotations: {
+					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+						'Name=gauzy-api-ingress',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+						config.sslCoCertificateARN,
+					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+						'http',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+						'https',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+					// 	'true',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+					// 	'5',
+				},
 			},
 			spec: {
 				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
@@ -138,7 +144,12 @@ export const createBackendAPI = async (
 			provider: provider,
 		}
 	);
-
+	const apiDns = new cloudflare.Record('api-dns', {
+		name: config.prodApiDomain,
+		type: 'CNAME',
+		value: service.status.loadBalancer.ingress[0].hostname,
+		zoneId: `${process.env.ZONE_ID}`,
+	});
 	// return LoadBalancer public Endpoint
 	let serviceHostname: pulumi.Output<string>;
 

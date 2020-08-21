@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
 import * as eks from '@pulumi/eks';
 import * as k8s from '@pulumi/kubernetes';
+import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 export const createFrontend = async (
@@ -26,9 +27,20 @@ export const createFrontend = async (
 				value: apiBaseUrl,
 			},
 		],
+		volumeMounts: [
+			{
+				name: 'nginx',
+				mountPath: '/etc/nginx/conf.d',
+				readOnly: true,
+			},
+		],
 		requests: {
 			cpu: '100m',
-			memory: '1900Mi',
+			memory: '1000Mi',
+		},
+		limits: {
+			cpu: '400m',
+			memory: '2000Mi',
 		},
 		/*
     livenessProbe: {
@@ -58,7 +70,50 @@ export const createFrontend = async (
 			},
 		],
 	};
-
+	const configmap = new k8s.core.v1.ConfigMap(
+		'webapp-config',
+		{
+			apiVersion: 'v1',
+			kind: 'ConfigMap',
+			metadata: {
+				name: 'nginx',
+				namespace: namespaceName,
+				labels: appLabels,
+			},
+			data: {
+				nginx: `events {
+				worker_connections 1024;
+			  }
+			  
+			  http {
+				sendfile on;
+			  
+				error_log /etc/nginx/logs/error.log warn;
+				client_max_body_size 20m;
+				   
+				upstream webapp {
+				  server webapp:4200;
+				}
+				
+				upstream api {
+				  server api:3000;
+				}
+				   
+				server {    
+				  listen 8080;
+				  location /api/ {
+					  proxy_pass http://api;
+					}
+				  
+				  location / {
+					proxy_pass http://webapp;      
+				  }
+				}
+			  }`,
+			},
+		},
+		{ provider: provider }
+	);
 	const deployment = new k8s.apps.v1.Deployment(
 		name,
 		{
@@ -75,6 +130,20 @@ export const createFrontend = async (
 					},
 					spec: {
 						containers: [container],
+						volumes: [
+							{
+								name: 'nginx',
+								configMap: {
+									name: 'nginx',
+									items: [
+										{
+											key: 'nginx',
+											path: 'nginx',
+										},
+									],
+								},
+							},
+						],
 					},
 				},
 			},
@@ -94,21 +163,22 @@ export const createFrontend = async (
 		{
 			metadata: {
 				labels: appLabels,
+				name: 'webapp',
 				namespace: namespaceName,
-				// annotations: {
-				// 	'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
-				// 		'Name=gauzy-frontend-ingress',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
-				// 		config.sslCoCertificateARN,
-				// 	'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
-				// 		'http',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
-				// 		'https',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
-				// 		'true',
-				// 	'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
-				// 		'5'
-				// }
+				annotations: {
+					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+						'Name=gauzy-frontend-ingress',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+						config.sslCoCertificateARN,
+					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+						'http',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+						'https',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+					// 	'true',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+					// 	'5'
+				},
 			},
 			spec: {
 				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
@@ -128,7 +198,12 @@ export const createFrontend = async (
 			provider: provider,
 		}
 	);
-
+	const webappDns = new cloudflare.Record('webapp-dns', {
+		name: config.prodWebappDomain,
+		type: 'CNAME',
+		value: service.status.loadBalancer.ingress[0].hostname,
+		zoneId: `${process.env.ZONE_ID}`,
+	});
 	// return LoadBalancer public Endpoint
 	let serviceHostname: pulumi.Output<string>;
 

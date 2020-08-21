@@ -130,21 +130,19 @@ export const setupDevEnvironment = async (dockerImages: {
 	// Get private subnets of the EKS VPC
 	const subnets = aws.ec2.getSubnetIds({
 		vpcId: (await vpc).id,
-		tags: {
-			type: 'private',
-		},
 	});
-	// Associate all subnets into the EKS route table
-	// (await subnets).ids.forEach(async (subnetId) => {
-	// 	// const routeTable = await aws.ec2.getRouteTable({ subnetId: subnetId });
-	// 	const eksSubnetAssociation = new aws.ec2.RouteTableAssociation(
-	// 		`eks-subnet-route-${subnetId}`,
-	// 		{
-	// 			routeTableId: (await vpc).mainRouteTableId,
-	// 			subnetId: subnetId,
-	// 		}
-	// 	);
-	// });
+	// Update routing tables of all subnets within the EKS VPC to allow connection to RDS
+	(await subnets).ids.forEach(async (subnetId) => {
+		const routeTableId = aws.ec2.getRouteTable({
+			vpcId: (await vpc).id,
+			subnetId: subnetId,
+		});
+		const routeRule = new aws.ec2.Route(`eks-route-${subnetId}`, {
+			routeTableId: (await routeTableId).id,
+			destinationCidrBlock: vpcDb.vpc.cidrBlock,
+			vpcPeeringConnectionId: vpcPeeringConnection.id,
+		});
+	});
 
 	// Update Route tables for EKS and RDS
 	const eksRoutingRule = new aws.ec2.Route('eks-routing-rule-rds', {
@@ -158,13 +156,11 @@ export const setupDevEnvironment = async (dockerImages: {
 		destinationCidrBlock: (await vpc).cidrBlock,
 		vpcPeeringConnectionId: vpcPeeringConnection.id,
 	});
-	// Get the CIDR Blocks of the private subnets of the EKS cluster
-	let eksPrivateCIDRBlocks: string[] = [];
-	(await subnets).ids.forEach(async (id) => {
-		const subnet = aws.ec2.getSubnet({
-			id: id,
-		});
-		eksPrivateCIDRBlocks.push((await subnet).cidrBlock);
+	const privateSubnets = aws.ec2.getSubnetIds({
+		vpcId: (await vpc).id,
+		tags: {
+			type: 'private',
+		},
 	});
 	// Update Security group rules
 	const rdsSecurityRule = new aws.ec2.SecurityGroupRule(
@@ -174,7 +170,7 @@ export const setupDevEnvironment = async (dockerImages: {
 			toPort: 5432,
 			protocol: 'TCP',
 			type: 'ingress',
-			cidrBlocks: (await subnets).ids.map(async (subnetId) => {
+			cidrBlocks: (await privateSubnets).ids.map(async (subnetId) => {
 				const subnet = aws.ec2.getSubnet({
 					id: subnetId,
 				});
@@ -288,38 +284,16 @@ export const setupDevEnvironment = async (dockerImages: {
 	// - https://github.com/pulumi/pulumi-kubernetes/issues/600
 	// - https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/README.md
 	// Role binding for kubernetes-dashboard
-	const dashboard_rbac = new k8s.rbac.v1.ClusterRoleBinding(
-		'k8s-dashboard-rbac',
-		{
-			apiVersion: 'rbac.authorization.k8s.io/v1',
-			kind: 'ClusterRoleBinding',
-			metadata: {
-				name: 'kubernetes-dashboard',
-			},
-			roleRef: {
-				name: 'cluster-admin',
-				kind: 'ClusterRole',
-				apiGroup: 'rbac.authorization.k8s.io',
-			},
-			subjects: [
-				{
-					kind: 'ServiceAccount',
-					name: 'kubernetes-dashboard',
-					namespace: 'default',
-				},
-			],
-		},
-		{ provider: provider }
-	);
-	const k8sDashboardChart = new k8s.helm.v2.Chart(
-		'kubernetes-dashboard',
-		{
-			repo: 'stable',
-			chart: 'kubernetes-dashboard',
-		},
-		{ providers: { kubernetes: provider } }
-	);
 
+	// NOTE: THIS IS DEPRECATED AND DOESNT WORK ANYMORE
+	// const k8sDashboardChart = new k8s.helm.v2.Chart(
+	// 	'kubernetes-dashboard',
+	// 	{
+	// 		repo: 'stable',
+	// 		chart: 'kubernetes-dashboard',
+	// 	},
+	// 	{ providers: { kubernetes: provider } }
+	// );
 	// const kubeconfig = cluster.kubeconfig;
 
 	// const clusterName = cluster.core.cluster.name;
