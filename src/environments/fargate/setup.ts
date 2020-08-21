@@ -20,7 +20,7 @@ export const setupFargateEnvironment = async (dockerImages: {
 		// Create an ECS cluster for Demo env
 		const cluster = new awsx.ecs.Cluster('gauzy-demo', {
 			vpc,
-			name: 'gauzy-demo'
+			name: 'gauzy-demo',
 		});
 
 		const backendAPIResponse = await backendAPI.createBackendAPI(
@@ -57,4 +57,6 @@ export const setupFargateEnvironment = async (dockerImages: {
 			}
 		);
 	});
+
+	return dbCluster;
 };

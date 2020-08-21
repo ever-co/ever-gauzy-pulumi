@@ -239,4 +239,6 @@ export const setupDemoEnvironment = async (dockerImages: {
 			}
 		);
 	});
+
+	return dbCluster;
 };

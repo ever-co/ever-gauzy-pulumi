@@ -1,6 +1,10 @@
 config:
-  aws:profile: ever
-  aws:region: us-east-1
-  cloud-aws:useFargate: "true"
-  cloud:provider: aws
-  gauzy:isMinikube: "false"
+    aws:profile: ever
+    aws:region: us-east-1
+    cloud-aws:useFargate: 'true'
+    cloud:provider: aws
+    cloudflare:apiKey:
+        secure: AAABALbz+Sacm9VhOQweVWQdBvN8BK39bsg/6IQM4Ow4KT/Tjwh33TehBJX/r7dXw5VkzlHWLpKalWR/SQU07nhETS8i
+    cloudflare:email:
+        secure: AAABAHSvNRR5Vk9rDFa+7W3mK3QakK/0VFyaPg8t+vBVx1oTjyb4JKUA7RnHqTE=
+    gauzy:isMinikube: 'false'
