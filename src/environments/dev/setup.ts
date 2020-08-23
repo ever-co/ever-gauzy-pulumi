@@ -5,9 +5,8 @@ import * as db from '../../db';
 import * as config from '../../config';
 import * as backendAPI from './backend-api';
 import * as frontend from './frontend';
-import { Environment } from '../environments';
 import * as k8s from '@pulumi/kubernetes';
-import { VpcIpv4CidrBlockAssociation } from '@pulumi/aws/ec2';
+import { Environment } from '../environments';
 
 const project = pulumi.getProject();
 const stack = pulumi.getStack();
@@ -41,13 +40,11 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Add route rules towards EKS VPC from all RDS Subnets
 	const createRouteRules = async () => {
-
 		const subnets = await aws.ec2.getSubnetIds({
 			vpcId: vpcDb.id,
 		});
 
 		subnets.ids.forEach(async (subnetId) => {
-
 			const routeTable = await aws.ec2.getRouteTable({
 				subnetId: subnetId,
 			});
@@ -62,7 +59,7 @@ export const setupDevEnvironment = async (dockerImages: {
 			);
 		});
 	};
-	
+
 	await createRouteRules();
 
 	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod, vpcDb);
@@ -103,10 +100,9 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Update routing tables of all subnets within the EKS VPC to allow connection to RDS
 	subnets.ids.forEach(async (subnetId) => {
-
 		const routeTable = await aws.ec2.getRouteTable({
 			vpcId: vpc.id,
-			subnetId
+			subnetId,
 		});
 
 		const routeRule = new aws.ec2.Route(
