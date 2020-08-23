@@ -16,7 +16,7 @@ export const setupDevEnvironment = async (dockerImages: {
 	apiImage: string;
 	webappImage: string;
 }) => {
-	const vpc = aws.ec2.getVpc({
+	const vpc = await aws.ec2.getVpc({
 		tags: {
 			Name: 'ever-dev',
 		},
@@ -41,24 +41,29 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Add route rules towards EKS VPC from all RDS Subnets
 	const createRouteRules = async () => {
-		const subnets = aws.ec2.getSubnetIds({
-			vpcId: (await vpcDb).id,
+
+		const subnets = await aws.ec2.getSubnetIds({
+			vpcId: vpcDb.id,
 		});
-		(await subnets).ids.forEach(async (subnetId) => {
-			const routeTable = aws.ec2.getRouteTable({
+
+		subnets.ids.forEach(async (subnetId) => {
+
+			const routeTable = await aws.ec2.getRouteTable({
 				subnetId: subnetId,
 			});
+
 			const routeRule = new aws.ec2.Route(
 				`${project}-${stack}-rds-route-${subnetId}`,
 				{
-					routeTableId: (await routeTable).id,
+					routeTableId: routeTable.id,
 					destinationCidrBlock: '172.16.0.0/16',
 					vpcPeeringConnectionId: vpcPeeringConnection.id,
 				}
 			);
 		});
 	};
-	createRouteRules();
+	
+	await createRouteRules();
 
 	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod, vpcDb);
 
@@ -66,8 +71,8 @@ export const setupDevEnvironment = async (dockerImages: {
 		`${project}-${stack}-vpc-peering`,
 		{
 			autoAccept: true,
-			peerVpcId: (await vpc).id,
-			vpcId: (await vpcDb).id,
+			peerVpcId: vpc.id,
+			vpcId: vpcDb.id,
 			tags: {
 				Name: `${project}-${stack}-vpc-peering`,
 			},
@@ -90,22 +95,24 @@ export const setupDevEnvironment = async (dockerImages: {
 			vpcPeeringConnectionId: vpcPeeringConnection.id,
 		}
 	);
+
 	// Get private subnets of the EKS VPC
-	const subnets = aws.ec2.getSubnetIds({
-		vpcId: (await vpc).id,
+	const subnets = await aws.ec2.getSubnetIds({
+		vpcId: vpc.id,
 	});
 
 	// Update routing tables of all subnets within the EKS VPC to allow connection to RDS
-	(await subnets).ids.forEach(async (subnetId) => {
-		const routeTable = aws.ec2.getRouteTable({
-			vpcId: (await vpc).id,
-			subnetId,
+	subnets.ids.forEach(async (subnetId) => {
+
+		const routeTable = await aws.ec2.getRouteTable({
+			vpcId: vpc.id,
+			subnetId
 		});
 
 		const routeRule = new aws.ec2.Route(
 			`${project}-${stack}-route-${subnetId}`,
 			{
-				routeTableId: (await routeTable).id,
+				routeTableId: routeTable.id,
 				destinationCidrBlock: vpcDb.vpc.cidrBlock,
 				vpcPeeringConnectionId: vpcPeeringConnection.id,
 			}
@@ -114,19 +121,19 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Update Route tables for EKS and RDS
 	const eksRoutingRule = new aws.ec2.Route('eks-routing-rule-rds', {
-		routeTableId: (await vpc).mainRouteTableId,
+		routeTableId: vpc.mainRouteTableId,
 		destinationCidrBlock: vpcDb.vpc.cidrBlock,
 		vpcPeeringConnectionId: vpcPeeringConnection.id,
 	});
 
 	const rdsRoutingRule = new aws.ec2.Route('rds-routing-rule-eks', {
 		routeTableId: vpcDb.vpc.mainRouteTableId,
-		destinationCidrBlock: (await vpc).cidrBlock,
+		destinationCidrBlock: vpc.cidrBlock,
 		vpcPeeringConnectionId: vpcPeeringConnection.id,
 	});
 
-	const privateSubnets = aws.ec2.getSubnetIds({
-		vpcId: (await vpc).id,
+	const privateSubnets = await aws.ec2.getSubnetIds({
+		vpcId: vpc.id,
 		tags: {
 			type: 'private',
 		},
@@ -140,11 +147,11 @@ export const setupDevEnvironment = async (dockerImages: {
 			toPort: 5432,
 			protocol: 'TCP',
 			type: 'ingress',
-			cidrBlocks: (await privateSubnets).ids.map(async (subnetId) => {
-				const subnet = aws.ec2.getSubnet({
+			cidrBlocks: privateSubnets.ids.map(async (subnetId) => {
+				const subnet = await aws.ec2.getSubnet({
 					id: subnetId,
 				});
-				return (await subnet).cidrBlock;
+				return subnet.cidrBlock;
 			}),
 			securityGroupId: vpcDb.vpc.defaultSecurityGroupId,
 		}
@@ -222,7 +229,7 @@ export const setupDevEnvironment = async (dockerImages: {
 				name: `${project}-${stack}`,
 			},
 		},
-		{ provider: provider }
+		{ provider }
 	);
 
 	const namespaceName = ns.metadata.name;
