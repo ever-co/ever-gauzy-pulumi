@@ -7,35 +7,75 @@ import * as backendAPI from './backend-api';
 import * as frontend from './frontend';
 import { Environment } from '../environments';
 import * as k8s from '@pulumi/kubernetes';
+import { VpcIpv4CidrBlockAssociation } from '@pulumi/aws/ec2';
+
+const project = pulumi.getProject();
+const stack = pulumi.getStack();
 
 export const setupDevEnvironment = async (dockerImages: {
 	apiImage: string;
 	webappImage: string;
 }) => {
-	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod);
-
 	const vpc = aws.ec2.getVpc({
 		tags: {
 			Name: 'ever-dev',
 		},
 	});
 
-	const vpcDb = awsx.ec2.Vpc.getDefault();
+	const vpcDb = new awsx.ec2.Vpc(`${project}-${stack}-rds`, {
+		cidrBlock: '16.0.0.0/16',
+		numberOfAvailabilityZones: 3,
+		subnets: [
+			{
+				name: 'subnet',
+				type: 'private',
+				tags: {
+					Name: `${project}-${stack}-rds`,
+				},
+			},
+		],
+		tags: {
+			Name: `${project}-${stack}-rds`,
+		},
+	});
+
+	// Add route rules towards EKS VPC from all RDS Subnets
+	const createRouteRules = async () => {
+		const subnets = aws.ec2.getSubnetIds({
+			vpcId: (await vpcDb).id,
+		});
+		(await subnets).ids.forEach(async (subnetId) => {
+			const routeTable = aws.ec2.getRouteTable({
+				subnetId: subnetId,
+			});
+			const routeRule = new aws.ec2.Route(
+				`${project}-${stack}-rds-route-${subnetId}`,
+				{
+					routeTableId: (await routeTable).id,
+					destinationCidrBlock: '172.16.0.0/16',
+					vpcPeeringConnectionId: vpcPeeringConnection.id,
+				}
+			);
+		});
+	};
+	createRouteRules();
+
+	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod, vpcDb);
 
 	const vpcPeeringConnection = new aws.ec2.VpcPeeringConnection(
-		'vpc-peering',
+		`${project}-${stack}-vpc-peering`,
 		{
 			autoAccept: true,
 			peerVpcId: (await vpc).id,
-			vpcId: vpcDb.id,
+			vpcId: (await vpcDb).id,
 			tags: {
-				Name: 'eks-rds-peering',
+				Name: `${project}-${stack}-vpc-peering`,
 			},
 		}
 	);
 
 	const peeringConnectionOptions = new aws.ec2.PeeringConnectionOptions(
-		'vpc-peering',
+		`${project}-${stack}-peering-options`,
 		{
 			accepter: {
 				allowClassicLinkToRemoteVpc: false,
@@ -50,7 +90,6 @@ export const setupDevEnvironment = async (dockerImages: {
 			vpcPeeringConnectionId: vpcPeeringConnection.id,
 		}
 	);
-
 	// Get private subnets of the EKS VPC
 	const subnets = aws.ec2.getSubnetIds({
 		vpcId: (await vpc).id,
@@ -58,16 +97,19 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Update routing tables of all subnets within the EKS VPC to allow connection to RDS
 	(await subnets).ids.forEach(async (subnetId) => {
-		const routeTableId = aws.ec2.getRouteTable({
+		const routeTable = aws.ec2.getRouteTable({
 			vpcId: (await vpc).id,
 			subnetId,
 		});
 
-		const routeRule = new aws.ec2.Route(`eks-route-${subnetId}`, {
-			routeTableId: (await routeTableId).id,
-			destinationCidrBlock: vpcDb.vpc.cidrBlock,
-			vpcPeeringConnectionId: vpcPeeringConnection.id,
-		});
+		const routeRule = new aws.ec2.Route(
+			`${project}-${stack}-route-${subnetId}`,
+			{
+				routeTableId: (await routeTable).id,
+				destinationCidrBlock: vpcDb.vpc.cidrBlock,
+				vpcPeeringConnectionId: vpcPeeringConnection.id,
+			}
+		);
 	});
 
 	// Update Route tables for EKS and RDS
@@ -92,7 +134,7 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Update Security group rules
 	const rdsSecurityRule = new aws.ec2.SecurityGroupRule(
-		'rds-security-group-rule',
+		`${project}-${stack}-rds-sg-rule`,
 		{
 			fromPort: 0,
 			toPort: 5432,
@@ -174,13 +216,13 @@ export const setupDevEnvironment = async (dockerImages: {
 	// Create a Kubernetes Namespace for our production app API and front-end
 	// NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
 	const ns = new k8s.core.v1.Namespace(
-		'gauzy-dev',
+		`${project}-${stack}-ns`,
 		{
 			metadata: {
-				name: 'gauzy-dev',
+				name: `${project}-${stack}`,
 			},
 		},
-		{ provider }
+		{ provider: provider }
 	);
 
 	const namespaceName = ns.metadata.name;

@@ -1,8 +1,12 @@
 import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { Pool, Client, PoolConfig } from 'pg';
 import { EngineMode, ClusterInstanceArgs, ClusterArgs } from '@pulumi/aws/rds';
 import { Environment } from './environments';
+
+const project = pulumi.getProject();
+const stack = pulumi.getStack();
 
 export const getEngineMode = () => {
 	let engineMode: EngineMode = 'provisioned';
@@ -29,7 +33,10 @@ export const getIsPubliclyAccessible = () => {
 /**
  * Create Aurora Serverless PostgreSQL Cluster
  */
-export const createPostgreSQLCluster = async (environment: Environment) => {
+export const createPostgreSQLCluster = async (
+	environment: Environment,
+	databaseVpc: awsx.ec2.Vpc
+) => {
 	const dbName = process.env.DB_NAME || 'gauzy';
 	const dbUser = process.env.DB_USER
 		? <string>process.env.DB_USER
@@ -48,8 +55,17 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 	if (publiclyAccessible) {
 		// TODO: we need to create security group with public access to DB
 	}
-
-	const clusterName = `gauzy-db-${environment.toLowerCase()}`;
+	const rdsSubnetGroup = new aws.rds.SubnetGroup(
+		`${project}-${stack}-subnet-group`,
+		{
+			name: `${project}-${stack}-rds-subnet-group`,
+			subnetIds: databaseVpc.privateSubnetIds,
+			tags: {
+				Name: `${project}-${stack}`,
+			},
+		}
+	);
+	const clusterName = `gauzy-db-${stack}`;
 
 	// TODO: not sure yet if we should have different engine modes for production
 	// vs dev&demo environments (e.g. serverless / provisioned).
@@ -78,6 +94,7 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 				minCapacity: 2, // make sure serverless does not lost all instances, ever (it sucks)
 			},
 			finalSnapshotIdentifier: 'final-snapshot',
+			dbSubnetGroupName: rdsSubnetGroup.name,
 			tags: {
 				Name: 'gauzy-rds',
 			},
@@ -98,6 +115,7 @@ export const createPostgreSQLCluster = async (environment: Environment) => {
 			deletionProtection: environment === Environment.Prod,
 			engineMode,
 			finalSnapshotIdentifier: 'final-snapshot',
+			dbSubnetGroupName: rdsSubnetGroup.name,
 			tags: {
 				Name: 'gauzy-rds',
 			},
