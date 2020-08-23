@@ -52,12 +52,10 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	// Add route rules towards EKS VPC from all RDS Subnets
 	const createRouteRules = async (vpcDbCurrent: awsx.ec2.Vpc) => {
-		vpcDbCurrent.id.apply(async (vpcId) => {
-			const currentSubnets = await aws.ec2.getSubnetIds({
-				vpcId,
-			});
+		const currentSubnets = await vpcDbCurrent.getSubnets('private');
 
-			currentSubnets.ids.forEach(async (subnetId) => {
+		currentSubnets.forEach(async (subnet) => {
+			subnet.id.apply(async (subnetId) => {
 				const routeTable = await aws.ec2.getRouteTable({
 					subnetId,
 				});
