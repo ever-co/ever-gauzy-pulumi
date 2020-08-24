@@ -3,6 +3,8 @@ import * as k8s from '@pulumi/kubernetes';
 import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
+const stack: string = pulumi.getStack();
+
 export const createBackendAPI = async (
 	apiImage: string,
 	provider: k8s.Provider,
@@ -10,7 +12,7 @@ export const createBackendAPI = async (
 	dbHost: pulumi.Output<string>,
 	dbPort: number
 ) => {
-	const name = 'gauzy-api-dev';
+	const name = `gauzy-api-${stack}`;
 
 	const appLabels = {
 		appClass: name,
@@ -34,13 +36,15 @@ export const createBackendAPI = async (
 			{ name: 'DB_USER', value: dbUser },
 			{ name: 'DB_NAME', value: dbName },
 		],
-		requests: {
-			cpu: '500m',
-			memory: '3000Mi',
-		},
-		limits: {
-			cpu: '1500m',
-			memory: '4000Mi',
+		resources: {
+			requests: {
+				cpu: '500m',
+				memory: '1000Mi',
+			},
+			limits: {
+				cpu: '1000m',
+				memory: '2000Mi',
+			},
 		},
 		/*
     livenessProbe: {
@@ -72,7 +76,7 @@ export const createBackendAPI = async (
 	};
 
 	const deployment = new k8s.apps.v1.Deployment(
-		name,
+		`${name}-deployment`,
 		{
 			metadata: {
 				namespace: namespaceName,
@@ -92,7 +96,7 @@ export const createBackendAPI = async (
 			},
 		},
 		{
-			provider,
+			provider: provider,
 		}
 	);
 
@@ -102,7 +106,7 @@ export const createBackendAPI = async (
 	const isMinikube = pulumiConfig.require('isMinikube');
 
 	const service = new k8s.core.v1.Service(
-		name,
+		`${name}-svc`,
 		{
 			metadata: {
 				labels: appLabels,
@@ -138,12 +142,12 @@ export const createBackendAPI = async (
 			},
 		},
 		{
-			provider,
+			provider: provider,
 		}
 	);
 
 	const apiDns = new cloudflare.Record('api-dns', {
-		name: config.prodApiDomain,
+		name: config.demoApiDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
 		zoneId: `${process.env.ZONE_ID}`,
@@ -157,6 +161,5 @@ export const createBackendAPI = async (
 	} else {
 		serviceHostname = service.status.loadBalancer.ingress[0].hostname;
 	}
-
 	return { serviceHostname, port: service.spec.ports[0].port };
 };

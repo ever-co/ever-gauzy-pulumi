@@ -8,34 +8,51 @@ import * as frontend from './frontend';
 import { Environment } from '../environments';
 import * as k8s from '@pulumi/kubernetes';
 
+const project = pulumi.getProject();
+const stack = pulumi.getStack();
+
 export const setupDemoEnvironment = async (dockerImages: {
 	apiImage: string;
 	webappImage: string;
 }) => {
-	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod);
-
 	const vpc = aws.ec2.getVpc({
 		tags: {
 			Name: 'ever-dev',
 		},
 	});
 
-	const vpcDb = awsx.ec2.Vpc.getDefault();
+	const vpcDb = new awsx.ec2.Vpc(`${project}-${stack}-rds`, {
+		cidrBlock: '20.0.0.0/24',
+		numberOfAvailabilityZones: 3,
+		subnets: [
+			{
+				name: 'subnet',
+				type: 'private',
+				tags: {
+					Name: `${project}-${stack}-rds`,
+				},
+			},
+		],
+		tags: {
+			Name: `${project}-${stack}-rds`,
+		},
+	});
+	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod, vpcDb);
 
 	const vpcPeeringConnection = new aws.ec2.VpcPeeringConnection(
-		'vpc-peering',
+		`${project}-${stack}-vpc-peering`,
 		{
 			autoAccept: true,
 			peerVpcId: (await vpc).id,
-			vpcId: vpcDb.id,
+			vpcId: (await vpcDb).id,
 			tags: {
-				Name: 'eks-rds-peering',
+				Name: `${project}-${stack}-vpc-peering`,
 			},
 		}
 	);
 
 	const peeringConnectionOptions = new aws.ec2.PeeringConnectionOptions(
-		'vpc-peering',
+		`${project}-${stack}-peering-options`,
 		{
 			accepter: {
 				allowClassicLinkToRemoteVpc: false,
@@ -92,7 +109,7 @@ export const setupDemoEnvironment = async (dockerImages: {
 
 	// Update Security group rules
 	const rdsSecurityRule = new aws.ec2.SecurityGroupRule(
-		'rds-security-group-rule',
+		`${project}-${stack}-rds-sg-rule`,
 		{
 			fromPort: 0,
 			toPort: 5432,
@@ -174,13 +191,13 @@ export const setupDemoEnvironment = async (dockerImages: {
 	// Create a Kubernetes Namespace for our production app API and front-end
 	// NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
 	const ns = new k8s.core.v1.Namespace(
-		'gauzy-dev',
+		`${project}-${stack}-ns`,
 		{
 			metadata: {
-				name: 'gauzy-dev',
+				name: `${project}-${stack}`,
 			},
 		},
-		{ provider }
+		{ provider: provider }
 	);
 
 	const namespaceName = ns.metadata.name;

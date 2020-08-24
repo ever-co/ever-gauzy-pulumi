@@ -6,8 +6,8 @@ import {
 	setupDemoEnvironment,
 	setupDevEnvironment,
 	setupProdEnvironment,
-	setupFargateEnvironment,
-	setupECSEnvironment,
+	// setupFargateEnvironment,
+	// setupECSEnvironment,
 } from './src/environments';
 import { createDockerImages } from './src/docker-images';
 

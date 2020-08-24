@@ -3,13 +3,15 @@ import * as k8s from '@pulumi/kubernetes';
 import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
+const stack: string = pulumi.getStack();
+
 export const createFrontend = async (
 	webappImage: string,
 	provider: k8s.Provider,
 	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
 ) => {
-	const name = 'gauzy-webapp-dev';
+	const name = `gauzy-webapp-${stack}`;
 
 	const appLabels = {
 		appClass: name,
@@ -32,13 +34,15 @@ export const createFrontend = async (
 				readOnly: true,
 			},
 		],
-		requests: {
-			cpu: '100m',
-			memory: '1000Mi',
-		},
-		limits: {
-			cpu: '400m',
-			memory: '2000Mi',
+		resources: {
+			requests: {
+				cpu: '100m',
+				memory: '500Mi',
+			},
+			limits: {
+				cpu: '400m',
+				memory: '1000Mi',
+			},
 		},
 		/*
     livenessProbe: {
@@ -70,7 +74,7 @@ export const createFrontend = async (
 	};
 
 	const configmap = new k8s.core.v1.ConfigMap(
-		'webapp-config',
+		`webapp-${stack}-config`,
 		{
 			apiVersion: 'v1',
 			kind: 'ConfigMap',
@@ -109,11 +113,11 @@ export const createFrontend = async (
 			  }`,
 			},
 		},
-		{ provider }
+		{ provider: provider }
 	);
 
 	const deployment = new k8s.apps.v1.Deployment(
-		name,
+		`${name}-deployment`,
 		{
 			metadata: {
 				namespace: namespaceName,
@@ -147,7 +151,7 @@ export const createFrontend = async (
 			},
 		},
 		{
-			provider,
+			provider: provider,
 		}
 	);
 
@@ -157,7 +161,7 @@ export const createFrontend = async (
 	const isMinikube = pulumiConfig.require('isMinikube');
 
 	const service = new k8s.core.v1.Service(
-		name,
+		`${name}-svc`,
 		{
 			metadata: {
 				labels: appLabels,
@@ -193,11 +197,11 @@ export const createFrontend = async (
 			},
 		},
 		{
-			provider,
+			provider: provider,
 		}
 	);
 
-	const webappDns = new cloudflare.Record('webapp-dns', {
+	const webappDns = new cloudflare.Record(`webapp-${stack}-dns`, {
 		name: config.prodWebappDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
