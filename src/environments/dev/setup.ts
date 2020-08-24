@@ -49,7 +49,16 @@ export const setupDevEnvironment = async (dockerImages: {
 			},
 		}
 	);
-
+	const rdsSubnetGroup = new aws.rds.SubnetGroup(
+		`${project}-${stack}-subnet-group`,
+		{
+			name: `${project}-${stack}-rds-subnet-group`,
+			subnetIds: vpcDb.privateSubnetIds,
+			tags: {
+				Name: `${project}-${stack}`,
+			},
+		}
+	);
 	// Add route rules towards EKS VPC from all RDS Subnets
 	const createRouteRules = async (vpcDbCurrent: awsx.ec2.Vpc) => {
 		const currentSubnets = await vpcDbCurrent.getSubnets('private');
@@ -74,7 +83,10 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	await createRouteRules(vpcDb);
 
-	const dbCluster = await db.createPostgreSQLCluster(Environment.Prod, vpcDb);
+	const dbCluster = await db.createPostgreSQLCluster(
+		Environment.Prod,
+		rdsSubnetGroup
+	);
 
 	const peeringConnectionOptions = new aws.ec2.PeeringConnectionOptions(
 		`${project}-${stack}-peering-options`,

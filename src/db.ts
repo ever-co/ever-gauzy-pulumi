@@ -35,7 +35,7 @@ export const getIsPubliclyAccessible = () => {
  */
 export const createPostgreSQLCluster = async (
 	environment: Environment,
-	databaseVpc: awsx.ec2.Vpc
+	subnetGroup: aws.rds.SubnetGroup
 ) => {
 	const dbName = process.env.DB_NAME || 'gauzy';
 	const dbUser = process.env.DB_USER
@@ -55,16 +55,7 @@ export const createPostgreSQLCluster = async (
 	if (publiclyAccessible) {
 		// TODO: we need to create security group with public access to DB
 	}
-	const rdsSubnetGroup = new aws.rds.SubnetGroup(
-		`${project}-${stack}-subnet-group`,
-		{
-			name: `${project}-${stack}-rds-subnet-group`,
-			subnetIds: databaseVpc.privateSubnetIds,
-			tags: {
-				Name: `${project}-${stack}`,
-			},
-		}
-	);
+
 	const clusterName = `gauzy-db-${stack}`;
 
 	// TODO: not sure yet if we should have different engine modes for production
@@ -94,7 +85,7 @@ export const createPostgreSQLCluster = async (
 				minCapacity: 2, // make sure serverless does not lost all instances, ever (it sucks)
 			},
 			finalSnapshotIdentifier: 'final-snapshot',
-			dbSubnetGroupName: rdsSubnetGroup.name,
+			dbSubnetGroupName: subnetGroup.name,
 			tags: {
 				Name: 'gauzy-rds',
 			},
@@ -115,7 +106,7 @@ export const createPostgreSQLCluster = async (
 			deletionProtection: environment === Environment.Prod,
 			engineMode,
 			finalSnapshotIdentifier: 'final-snapshot',
-			dbSubnetGroupName: rdsSubnetGroup.name,
+			dbSubnetGroupName: subnetGroup.name,
 			tags: {
 				Name: 'gauzy-rds',
 			},
