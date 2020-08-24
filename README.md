@@ -55,7 +55,7 @@ In addition, Gauzy Platform build with different settings for each environment (
 
 ## TODO
 
--   [ ] Currently we need to manually manage DNS records in Cloudflare (for CNAMEs of api / app). We need to manage it all from this Pulumi project, there is Cloudflare Pulumi provider, already added
+-   [x] ~~Currently we need to manually manage DNS records in Cloudflare (for CNAMEs of api / app). We need to manage it all from this Pulumi project, there is Cloudflare Pulumi provider, already added~~
 
 -   [ ] Setup [Redash](https://github.com/getredash/redash) in the same cluster, see <https://github.com/getredash/redash/blob/master/setup/docker-compose.yml> (optionally, but it's great to have that for Gauzy)
 

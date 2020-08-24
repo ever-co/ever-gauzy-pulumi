@@ -105,7 +105,6 @@ export const createPostgreSQLCluster = async (
 			preferredBackupWindow: '07:00-09:00',
 			deletionProtection: environment === Environment.Prod,
 			engineMode,
-			finalSnapshotIdentifier: 'final-snapshot',
 			dbSubnetGroupName: subnetGroup.name,
 			tags: {
 				Name: 'gauzy-rds',

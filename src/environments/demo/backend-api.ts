@@ -79,6 +79,7 @@ export const createBackendAPI = async (
 		`${name}-deployment`,
 		{
 			metadata: {
+				name: `api-${stack}`,
 				namespace: namespaceName,
 				labels: appLabels,
 			},
@@ -110,7 +111,7 @@ export const createBackendAPI = async (
 		{
 			metadata: {
 				labels: appLabels,
-				name: 'api',
+				name: `api-${stack}`,
 				namespace: namespaceName,
 				annotations: {
 					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
@@ -150,7 +151,7 @@ export const createBackendAPI = async (
 		name: config.demoApiDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
-		zoneId: `${process.env.ZONE_ID}`,
+		zoneId: `${process.env.ZONE_ID_PROD}`,
 	});
 
 	let serviceHostname: pulumi.Output<string>;

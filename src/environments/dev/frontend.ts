@@ -4,6 +4,7 @@ import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createFrontend = async (
 	webappImage: string,
@@ -120,6 +121,7 @@ export const createFrontend = async (
 		`${name}-deployment`,
 		{
 			metadata: {
+				name: `${project}-webapp-${stack}`,
 				namespace: namespaceName,
 				labels: appLabels,
 			},
@@ -165,13 +167,13 @@ export const createFrontend = async (
 		{
 			metadata: {
 				labels: appLabels,
-				name: 'webapp',
+				name: `${project}-webapp-${stack}`,
 				namespace: namespaceName,
 				annotations: {
 					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
 						'Name=gauzy-frontend-ingress',
 					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
-						config.sslCoCertificateARN,
+						config.sslDevCertificateARN,
 					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
 						'http',
 					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
@@ -202,10 +204,10 @@ export const createFrontend = async (
 	);
 
 	const webappDns = new cloudflare.Record(`webapp-${stack}-dns`, {
-		name: config.prodWebappDomain,
+		name: config.devWebappDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
-		zoneId: `${process.env.ZONE_ID}`,
+		zoneId: `${process.env.ZONE_ID_DEV}`,
 	});
 
 	// return LoadBalancer public Endpoint

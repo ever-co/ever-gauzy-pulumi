@@ -4,6 +4,7 @@ import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createBackendAPI = async (
 	apiImage: string,
@@ -79,6 +80,7 @@ export const createBackendAPI = async (
 		`${name}-deployment`,
 		{
 			metadata: {
+				name: `${project}-api-${stack}`,
 				namespace: namespaceName,
 				labels: appLabels,
 			},
@@ -110,13 +112,13 @@ export const createBackendAPI = async (
 		{
 			metadata: {
 				labels: appLabels,
-				name: 'api',
+				name: `${project}-api-${stack}`,
 				namespace: namespaceName,
 				annotations: {
 					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
 						'Name=gauzy-api-ingress',
 					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
-						config.sslCoCertificateARN,
+						config.sslDevCertificateARN,
 					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
 						'http',
 					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
@@ -147,10 +149,10 @@ export const createBackendAPI = async (
 	);
 
 	const apiDns = new cloudflare.Record(`gauzy-api-${stack}-dns`, {
-		name: config.prodApiDomain,
+		name: config.devApiDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
-		zoneId: `${process.env.ZONE_ID}`,
+		zoneId: `${process.env.ZONE_ID_DEV}`,
 	});
 
 	let serviceHostname: pulumi.Output<string>;

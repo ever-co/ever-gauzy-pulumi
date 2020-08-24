@@ -237,14 +237,14 @@ export const setupDevEnvironment = async (dockerImages: {
 				name: `${project}-${stack}`,
 			},
 		},
-		{ provider }
+		{ provider: provider }
 	);
 
 	const namespaceName = ns.metadata.name;
 
 	const port = parseInt(<string>process.env.DB_PORT, 10);
 
-	await db.check(Environment.Prod, dbCluster.endpoint, port);
+	await db.check(Environment.Dev, dbCluster.endpoint, port);
 
 	const backendAPIResponse = await backendAPI.createBackendAPI(
 		dockerImages.apiImage,
@@ -258,7 +258,7 @@ export const setupDevEnvironment = async (dockerImages: {
 		dockerImages.webappImage,
 		provider,
 		namespaceName,
-		config.fullProdApiUrl
+		config.fullDevApiUrl
 	);
 
 	return { dbCluster, cluster, frontendResponse, backendAPIResponse };

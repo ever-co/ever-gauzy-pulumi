@@ -4,6 +4,7 @@ import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createFrontend = async (
 	webappImage: string,
@@ -118,6 +119,7 @@ export const createFrontend = async (
 		`${name}-deployment`,
 		{
 			metadata: {
+				name: 'webapp',
 				namespace: namespaceName,
 				labels: appLabels,
 			},
@@ -203,7 +205,7 @@ export const createFrontend = async (
 		name: config.prodWebappDomain,
 		type: 'CNAME',
 		value: service.status.loadBalancer.ingress[0].hostname,
-		zoneId: `${process.env.ZONE_ID}`,
+		zoneId: `${process.env.ZONE_ID_PROD}`,
 	});
 
 	// return LoadBalancer public Endpoint
