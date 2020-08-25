@@ -1,5 +1,4 @@
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { Pool, Client, PoolConfig } from 'pg';
 import { EngineMode, ClusterInstanceArgs, ClusterArgs } from '@pulumi/aws/rds';
