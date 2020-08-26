@@ -4,6 +4,7 @@ import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createBackendAPI = async (
 	apiImage: string,
@@ -12,7 +13,7 @@ export const createBackendAPI = async (
 	dbHost: pulumi.Output<string>,
 	dbPort: number
 ) => {
-	const name = `gauzy-api-${stack}`;
+	const name = `${project}-api-${stack}`;
 
 	const appLabels = {
 		appClass: name,

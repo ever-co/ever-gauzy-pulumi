@@ -4,6 +4,7 @@ import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
 
 const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createFrontend = async (
 	webappImage: string,
@@ -11,7 +12,7 @@ export const createFrontend = async (
 	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
 ) => {
-	const name = `gauzy-webapp-${stack}`;
+	const name = `${project}-webapp-${stack}`;
 
 	const appLabels = {
 		appClass: name,
