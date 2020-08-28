@@ -1,4 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
 import * as k8s from '@pulumi/kubernetes';
 import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
@@ -7,7 +8,7 @@ const stack: string = pulumi.getStack();
 const project: string = pulumi.getProject();
 
 export const createBackendAPI = async (
-	apiImage: string,
+	apiImage: aws.ecr.GetImageResult,
 	provider: k8s.Provider,
 	namespaceName: pulumi.Output<string>,
 	dbHost: pulumi.Output<string>,
@@ -27,7 +28,7 @@ export const createBackendAPI = async (
 
 	const container = {
 		name,
-		image: apiImage,
+		image: `${apiImage.registryId}.dkr.ecr.us-east-1.amazonaws.com/${apiImage.repositoryName}@${apiImage.imageDigest}`,
 		imagePullPolicy: 'Always',
 		env: [
 			{ name: 'DB_TYPE', value: 'postgres' },

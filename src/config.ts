@@ -52,6 +52,8 @@ export const sslCoCertificateARN: string =
 export const sslDevCertificateARN: string =
 	'arn:aws:acm:us-east-1:077336794262:certificate/9252387e-3673-40fa-84d9-38646b5340b9';
 
+export const awsEcrRegistry: string = '077336794262';
+
 /**
  * context is a path to a directory to use for the Docker build context, usually the directory
  * in which the Dockerfile resides (although dockerfile may be used to choose a custom location

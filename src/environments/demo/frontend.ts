@@ -1,4 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
 import * as k8s from '@pulumi/kubernetes';
 import * as cloudflare from '@pulumi/cloudflare';
 import * as config from '../../config';
@@ -7,7 +8,7 @@ const stack: string = pulumi.getStack();
 const project: string = pulumi.getProject();
 
 export const createFrontend = async (
-	webappImage: string,
+	webappImage: aws.ecr.GetImageResult,
 	provider: k8s.Provider,
 	namespaceName: pulumi.Output<string>,
 	apiBaseUrl: string
@@ -21,7 +22,7 @@ export const createFrontend = async (
 
 	const container = {
 		name,
-		image: webappImage,
+		image: `${webappImage.registryId}.dkr.ecr.us-east-1.amazonaws.com/${webappImage.repositoryName}@${webappImage.imageDigest}`,
 		env: [
 			{
 				name: 'API_BASE_URL',

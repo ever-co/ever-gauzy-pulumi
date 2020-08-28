@@ -12,8 +12,8 @@ const project = pulumi.getProject();
 const stack = pulumi.getStack();
 
 export const setupProdEnvironment = async (dockerImages: {
-	apiImage: string;
-	webappImage: string;
+	apiImage: aws.ecr.GetImageResult;
+	webappImage: aws.ecr.GetImageResult;
 }) => {
 	const vpc = await aws.ec2.getVpc({
 		tags: {

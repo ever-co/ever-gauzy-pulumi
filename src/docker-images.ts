@@ -15,9 +15,11 @@ export const createDockerImages = async (environment: Environment) => {
 	// const repositoryWebapp = new aws.ecr.Repository(webappRepoName, {
 	// 	name: webappRepoName
 	// });
-
-	let apiImage =
-		'077336794262.dkr.ecr.us-east-1.amazonaws.com/gauzy-api:latest';
+	const apiImage: aws.ecr.GetImageResult = await aws.ecr.getImage({
+		registryId: config.awsEcrRegistry,
+		repositoryName: 'gauzy-api',
+		imageTag: 'latest',
+	});
 
 	// // Build and publish a Docker image to a private ECR registry for API.
 	// if (environment !== Environment.Prod) {
@@ -35,9 +37,11 @@ export const createDockerImages = async (environment: Environment) => {
 	// 		{ repository: repositoryApi }
 	// 	);
 	// }
-
-	let webappImage =
-		'077336794262.dkr.ecr.us-east-1.amazonaws.com/gauzy-webapp:latest';
+	const webappImage: aws.ecr.GetImageResult = await aws.ecr.getImage({
+		registryId: config.awsEcrRegistry,
+		repositoryName: 'gauzy-webapp',
+		imageTag: 'latest',
+	});
 
 	// // Build and publish a Docker image to a private ECR registry for Web App.
 	// if (environment !== Environment.Prod) {
