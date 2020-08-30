@@ -1,71 +1,95 @@
-import * as pulumi from "@pulumi/pulumi";
+import * as pulumi from '@pulumi/pulumi';
 
 /**
  * Supported Environments (Pulumi Stacks)
  * See https://github.com/ever-co/gauzy/issues/216
  */
 export enum Environment {
-    /**
-     * Dev Environment / Stack
-     * Available on http://appdev.gauzy.co:4200
-     * Implementation:
-     * - uses ECS container instances, not Fargate
-     * - 1 Docker container for API, working on port 3000
-     * - 1 Docker container for Front-end, working on port 4200
-     * - No LBs & No SSL are used for now (later we will provision Docker container with nginx or traefik with letsencrypt certs)
-     */
-    Dev = "Dev",
+	/**
+	 * Dev Environment / Stack.
+	 * Available on https://app.gauzy.dev
+	 * - AWS EKS (Kubernetes), now WIP
+	 */
+	Dev = 'Dev',
 
-    /**
-     * Prod Environment / Stack.
-     * Available on https://app.gauzy.co
-     * Note 1: this project will provision single env used for multiple tenants, including our own tenant!
-     * Note 2: we will support fully isolated k8s with namespaces, which will be provisioned by our SaaS platform (private repo)
-     * - AWS EKS (Kubernetes), now WIP
-     */
-    Prod = "Prod",
+	/**
+	 * Demo Environment / Stack.
+	 * Available on https://demo.gauzy.co
+	 * - AWS EKS (Kubernetes), now WIP
+	 */
+	Demo = 'Demo',
 
-    /**
-     * Demo Environment / Stack. 
-     * Available on https://demo.gauzy.co
-     * - AWS Fargate Services (2 services, one for API and one for Front-end)
-     * - ALBs (2 load balancers, one for API and one for Front-end) 
-     * - AWS SSL Certificates
-     * - Serverless Aurora PostgreSQL
-     */
-    Demo = "Demo"
+	/**
+	 * Prod Environment / Stack.
+	 * Available on https://app.gauzy.co
+	 * Note 1: this project will provision single env used for multiple tenants, including our own tenant!
+	 * Note 2: we will support fully isolated k8s with namespaces,
+	 * which will be provisioned by our SaaS platform (private repo)
+	 * - AWS EKS (Kubernetes), now WIP
+	 */
+	Prod = 'Prod',
+
+	/**
+	 * ECS Environment / Stack
+	 * Implementation:
+	 * - uses ECS container instances, not Fargate.
+	 * - all cluster consist from single t3.medium instance (totally 4Gb RAM, so each docker VM gets 2Gb RAM)
+	 * - 1 Docker container for API, working on port 3000
+	 * - 1 Docker container for Front-end, working on port 4200
+	 * - ALBs (2 load balancers, one for API and one for Front-end)
+	 * - AWS SSL Certificates
+	 * - Serverless Aurora PostgreSQL
+	 */
+	ECS = 'ECS',
+
+	/**
+	 * Fargate Environment / Stack.
+	 * - AWS Fargate Services (2 services, one for API and one for Front-end)
+	 * - ALBs (2 load balancers, one for API and one for Front-end)
+	 * - AWS SSL Certificates
+	 * - Serverless Aurora PostgreSQL
+	 */
+	Fargate = 'Fargate'
 }
 
 /**
  * Detects running Pulumi Stack and return parsed environment
  */
-export const getRunningEnvironment = async (
-  ) => {
+export const getRunningEnvironment = async () => {
+	const runningStackName = pulumi.runtime.getStack();
 
-    const runningStackName = pulumi.runtime.getStack();
+	let environment: Environment;
 
-    let environment: Environment;
+	switch (runningStackName) {
+		case 'dev':
+		case 'development':
+			environment = Environment.Dev;
+			break;
 
-    switch (runningStackName) {
-        case "dev":
-        case "development":
-          environment = Environment.Dev;
-          break;
+		case 'demo':
+		case 'staging':
+			environment = Environment.Demo;
+			break;
 
-        case "demo":
-        case "staging":
-          environment = Environment.Demo;
-          break;
+		case 'prod':
+		case 'live':
+		case 'production':
+			environment = Environment.Prod;
+			break;
 
-        case "prod":
-        case "live":
-        case "production":
-          environment = Environment.Prod;
-          break;
+		case 'ecs':
+			environment = Environment.ECS;
+			break;
 
-        default:
-          throw new Error(`Given stack name ${runningStackName} not supported`);
-    }
+		case 'fargate':
+			environment = Environment.Fargate;
+			break;
 
-    return environment;
-}
+		default:
+			throw new Error(
+				`Given stack name ${runningStackName} not supported`
+			);
+	}
+
+	return environment;
+};

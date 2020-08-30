@@ -1,0 +1,6 @@
+config:
+    aws:profile: ever
+    aws:region: us-east-1
+    cloud-aws:useFargate: 'true'
+    cloud:provider: aws
+    gauzy:isMinikube: 'false'

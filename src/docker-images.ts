@@ -1,37 +1,64 @@
-import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
-import * as config from "./config";
-import { Environment } from "./environments";
+import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
+import * as config from './config';
+import { Environment } from './environments';
 
 export const createDockerImages = async (environment: Environment) => {
+	// const apiRepoName = `gauzy/api-${environment.toLowerCase()}`;
 
-    console.log(`Running 2 in ${environment} Environment`);
+	// const repositoryApi = new aws.ecr.Repository(apiRepoName, {
+	// 	name: apiRepoName
+	// });
 
-    const apiRepoName = `gauzy/api-${environment.toLowerCase()}`;
+	// const webappRepoName = `gauzy/webapp-${environment.toLowerCase()}`;
 
-    const repositoryApi = new aws.ecr.Repository(apiRepoName, 
-      {
-        name: apiRepoName
-      }
-    );
-  
-    // Build and publish a Docker image to a private ECR registry.
-    const apiImage = awsx.ecs.Image.fromDockerBuild(repositoryApi, {
-      context: config.dockerContextPath,
-      dockerfile: config.dockerAPIFile
-    });
-  
-    const webappRepoName = `gauzy/webapp-${environment.toLowerCase()}`;
+	// const repositoryWebapp = new aws.ecr.Repository(webappRepoName, {
+	// 	name: webappRepoName
+	// });
+	const apiImage: aws.ecr.GetImageResult = await aws.ecr.getImage({
+		registryId: config.awsEcrRegistry,
+		repositoryName: 'gauzy-api',
+		imageTag: 'latest',
+	});
 
-    const repositoryWebapp = new aws.ecr.Repository(webappRepoName, {
-      name: webappRepoName
-    });
-  
-    // Build and publish a Docker image to a private ECR registry.
-    const webappImage = awsx.ecs.Image.fromDockerBuild(repositoryWebapp, {
-      context: config.dockerContextPath,
-      dockerfile: config.dockerWebappFile
-    });
-  
-    return { apiImage, webappImage }
-    }
+	// // Build and publish a Docker image to a private ECR registry for API.
+	// if (environment !== Environment.Prod) {
+	// 	apiImage = awsx.ecs.Image.fromDockerBuild(repositoryApi, {
+	// 		context: config.dockerContextPath,
+	// 		dockerfile: config.dockerAPIFile
+	// 	});
+	// } else {
+	// 	apiImage = awsx.ecr.buildAndPushImage(
+	// 		apiRepoName,
+	// 		{
+	// 			context: config.dockerContextPath,
+	// 			dockerfile: config.dockerAPIFile
+	// 		},
+	// 		{ repository: repositoryApi }
+	// 	);
+	// }
+	const webappImage: aws.ecr.GetImageResult = await aws.ecr.getImage({
+		registryId: config.awsEcrRegistry,
+		repositoryName: 'gauzy-webapp',
+		imageTag: 'latest',
+	});
+
+	// // Build and publish a Docker image to a private ECR registry for Web App.
+	// if (environment !== Environment.Prod) {
+	// 	webappImage = awsx.ecs.Image.fromDockerBuild(repositoryWebapp, {
+	// 		context: config.dockerContextPath,
+	// 		dockerfile: config.dockerWebappFile
+	// 	});
+	// } else {
+	// 	webappImage = awsx.ecr.buildAndPushImage(
+	// 		webappRepoName,
+	// 		{
+	// 			context: config.dockerContextPath,
+	// 			dockerfile: config.dockerWebappFile
+	// 		},
+	// 		{ repository: repositoryWebapp }
+	// 	);
+	// }
+
+	return { apiImage, webappImage };
+};

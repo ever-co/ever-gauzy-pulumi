@@ -6,10 +6,10 @@ defaults: &defaults
     working_directory: /tmp/workspace
 
 orbs:
-  pulumi: pulumi/pulumi@1.0.1
+  pulumi: pulumi/pulumi@2.0.0
 
 jobs:
-  build:
+  deploy:
     <<: *defaults
     working_directory: /tmp/workspace/monorepo-root  
     docker:
@@ -17,31 +17,31 @@ jobs:
     steps:
       - checkout
       - run:
-            name: 'Installing latest Yarn'
-            command: |
-                      # remove default yarn
-                      sudo rm -rf $(dirname $(which yarn))/yarn*
-                      # download latest
-                      rm -rf ~/.yarn
-                      curl -o- -L https://yarnpkg.com/install.sh | bash
-                      echo 'export PATH="${PATH}:${HOME}/.yarn/bin:${HOME}/.config/yarn/global/node_modules/.bin"' >> $BASH_ENV  
+          name: 'Installing latest Yarn'
+          command: |
+            # remove default yarn
+            sudo rm -rf $(dirname $(which yarn))/yarn*
+            # download latest
+            rm -rf ~/.yarn
+            curl -o- -L https://yarnpkg.com/install.sh | bash
+            echo 'export PATH="${PATH}:${HOME}/.yarn/bin:${HOME}/.config/yarn/global/node_modules/.bin"' >> $BASH_ENV  
       - restore_cache:
-            name: Restore Yarn Package Cache
-            keys:
-                      - yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
+          name: Restore Yarn Package Cache
+          keys:
+            - yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
       - pulumi/login
       - run:
           name: 'Installing NPM Packages'
           command: |            
             yarn install
       - pulumi/update:
-              stack: dev
+          stack: dev
       - save_cache:
-                  name: Save Yarn Package Cache
-                  key: yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
-                  paths:
-                      - ~/.cache/yarn
+          name: Save Yarn Package Cache
+          key: yarn-packages-monorepo-root-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
       - persist_to_workspace:
-                  root: /tmp/workspace/monorepo-root
-                  paths:
-                      - '*'          
+          root: /tmp/workspace/monorepo-root
+          paths:
+            - '*'       

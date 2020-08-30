@@ -1,5 +1,7 @@
+.kube/
 /bin/
 /node_modules/
 /.vscode
 .env
 
+kubeconfig.json

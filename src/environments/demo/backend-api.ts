@@ -1,84 +1,168 @@
-import * as awsx from "@pulumi/awsx";
-import * as uuid from "uuid/v4";
-import { Cluster } from "@pulumi/awsx/ecs";
-import {
-  backendPort,
-  sslCertificateARN  
-} from "../../config";
+import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
+import * as k8s from '@pulumi/kubernetes';
+import * as cloudflare from '@pulumi/cloudflare';
+import * as config from '../../config';
+
+const stack: string = pulumi.getStack();
+const project: string = pulumi.getProject();
 
 export const createBackendAPI = async (
-  apiImage: awsx.ecs.Image,
-  cluster: Cluster,
-  dbHost: string,
-  port: number
+	apiImage: aws.ecr.GetImageResult,
+	provider: k8s.Provider,
+	namespaceName: pulumi.Output<string>,
+	dbHost: pulumi.Output<string>,
+	dbPort: number
 ) => {
+	const name = `${project}-api-${stack}`;
 
-  // Create ALB (application load balancer), see https://www.pulumi.com/docs/guides/crosswalk/aws/elb
-  const alb = new awsx.lb.ApplicationLoadBalancer("gauzy-api", {
-    securityGroups: cluster.securityGroups,
-    external: true,    
-    enableHttp2: true,
-    // this can be helpful to avoid accidentally deleting a long-lived, but auto-generated, load balancer URL.
-    enableDeletionProtection: false    
-  });
+	const appLabels = {
+		appClass: name,
+		tier: 'backend',
+	};
 
-  // This defines where requests will be forwarded to (e.g. in our case Fargate Services running and listening on port 4200)
-  const apiBackendTarget = alb.createTargetGroup("gauzy-api-target", {
-    port: backendPort,
-    protocol: "HTTP",    
-    healthCheck: {      
-      unhealthyThreshold: 10,
-      timeout: 120,
-      interval: 300,
-      path: "/api/hello",
-      protocol: "HTTP",
-      port: backendPort.toString()
-    }
-  });
+	// for production, we should always explicitly set secure DB credentials
+	const dbName = <string>process.env.DB_NAME;
+	const dbUser = <string>process.env.DB_USER;
+	const dbPassword = <string>process.env.DB_PASS;
 
-  const backendAPIListener = apiBackendTarget.createListener("gauzy-api", {
-    port: 444,
-    protocol: "HTTPS",
-    external: true,
-    certificateArn: sslCertificateARN,    
-    sslPolicy: "ELBSecurityPolicy-2016-08"    
-  });
-  
-  const fargateServiceName = "gauzy-api-" + uuid().split("-")[0];
+	const container = {
+		name,
+		image: `${apiImage.registryId}.dkr.ecr.us-east-1.amazonaws.com/${apiImage.repositoryName}@${apiImage.imageDigest}`,
+		imagePullPolicy: 'Always',
+		env: [
+			{ name: 'DB_TYPE', value: 'postgres' },
+			{ name: 'DB_HOST', value: dbHost.apply((dbHost) => dbHost) },
+			{ name: 'DB_PORT', value: dbPort.toString() },
+			{ name: 'DB_PASS', value: dbPassword },
+			{ name: 'DB_USER', value: dbUser },
+			{ name: 'DB_NAME', value: dbName },
+		],
+		resources: {
+			requests: {
+				cpu: '500m',
+				memory: '1000Mi',
+			},
+			limits: {
+				cpu: '1000m',
+				memory: '2000Mi',
+			},
+		},
+		/*
+    livenessProbe: {
+      httpGet: {
+        path: "/api/hello",
+        port: "http"
+      },
+      initialDelaySeconds: 180,
+      timeoutSeconds: 120,
+      failureThreshold: 10
+    },
+    readinessProbe: {
+      httpGet: {
+        path: "/api/hello",
+        port: "http"
+      },
+      initialDelaySeconds: 90,
+      timeoutSeconds: 120,
+      periodSeconds: 10
+    },
+    */
+		ports: [
+			{
+				name: 'http',
+				containerPort: config.backendPort,
+				protocol: 'TCP',
+			},
+		],
+	};
 
-  console.log(`Backend API Fargate Service Name ${fargateServiceName}`);
+	const deployment = new k8s.apps.v1.Deployment(
+		`${name}-deployment`,
+		{
+			metadata: {
+				name: `api-${stack}`,
+				namespace: namespaceName,
+				labels: appLabels,
+			},
+			spec: {
+				replicas: 1,
+				selector: { matchLabels: appLabels },
+				template: {
+					metadata: {
+						labels: appLabels,
+					},
+					spec: {
+						containers: [container],
+					},
+				},
+			},
+		},
+		{
+			provider: provider,
+		}
+	);
 
-  const dbName = process.env.DB_NAME || "gauzy";
-  const dbUser = process.env.DB_USER ? <string>process.env.DB_USER : "gauzy_user";
-  const dbPassword = process.env.DB_PASS ? <string>process.env.DB_PASS : "change_me";
+	// Create a LoadBalancer Service
 
-  // A custom container for the backend api
-  // Use the 'build' property to specify a folder that contains a Dockerfile.
-  // Pulumi builds the container and pushes to an ECR registry
-  const backendAPIService = new awsx.ecs.FargateService(fargateServiceName, {
-    cluster,
-    desiredCount: 2,
-    securityGroups: cluster.securityGroups,
-    taskDefinitionArgs: {
-      containers: {
-        backendAPI: {          
-          image: apiImage,
-          cpu: 1024 /*100% of 1024 is 1 vCPU*/,
-          memory: 2048 /*MB*/,
-          portMappings: [backendAPIListener],
-          environment: [
-            { name: "DB_TYPE", value: "postgres" },
-            { name: "DB_HOST", value: dbHost },
-            { name: "DB_PORT", value: port.toString() },
-            { name: "DB_PASS", value: dbPassword },
-            { name: "DB_USER", value: dbUser },
-            { name: "DB_NAME", value: dbName }
-          ]
-          // command: ["redis-server", "--requirepass", redisPassword], - can be some command?
-        }
-      }
-    }
-  });
+	const pulumiConfig = new pulumi.Config();
+	const isMinikube = pulumiConfig.require('isMinikube');
 
-  return { backendAPIListener, backendAPIService };
+	const service = new k8s.core.v1.Service(
+		`${name}-svc`,
+		{
+			metadata: {
+				labels: appLabels,
+				name: `api-${stack}`,
+				namespace: namespaceName,
+				annotations: {
+					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
+						'Name=gauzy-api-ingress',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-cert':
+						config.sslCoCertificateARN,
+					'service.beta.kubernetes.io/aws-load-balancer-backend-protocol':
+						'http',
+					'service.beta.kubernetes.io/aws-load-balancer-ssl-ports':
+						'https',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-enabled':
+					// 	'true',
+					// 'service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval':
+					// 	'5',
+				},
+			},
+			spec: {
+				// Minikube does not implement services of type `LoadBalancer`; require the user to specify if we're
+				// running on minikube, and if so, create only services of type ClusterIP.
+				type: isMinikube === 'true' ? 'ClusterIP' : 'LoadBalancer',
+				ports: [
+					{
+						name: 'https',
+						port: 443,
+						targetPort: 'http',
+					},
+				],
+				selector: appLabels,
+			},
+		},
+		{
+			provider: provider,
+		}
+	);
+
+	const apiDns = new cloudflare.Record('api-dns', {
+		name: config.demoApiDomain,
+		type: 'CNAME',
+		value: service.status.loadBalancer.ingress[0].hostname,
+		zoneId: `${process.env.ZONE_ID_PROD}`,
+	});
+
+	let serviceHostname: pulumi.Output<string>;
+
+	if (isMinikube === 'true') {
+		const frontendIp = service.spec.clusterIP;
+		serviceHostname = frontendIp;
+	} else {
+		serviceHostname = service.status.loadBalancer.ingress[0].hostname;
+	}
+	return { serviceHostname, port: service.spec.ports[0].port };
 };

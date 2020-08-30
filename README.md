@@ -4,29 +4,32 @@ Note: WIP, but already useful :)
 
 ## Introduction
 
-This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up`).
-It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
-Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
+-   This projects uses [Pulumi](https://www.pulumi.com) to easy and quickly deploy [Gauzy Platform](https://github.com/ever-co/gauzy) into Clouds with single command (`pulumi up --yes`).
+-   It currently supports AWS Fargate Clusters (for web app and backend api), Application Load Balancers and Serverless PostgreSQL DB deployments.
+-   Read more [About Gauzy](https://github.com/ever-co/gauzy/wiki/About-Gauzy) and [How to use it](https://github.com/ever-co/gauzy/wiki/How-to-use-Gauzy) at your agency or studio.
 
 ## Quick start
 
-- [Setup pulumi locally](https://www.pulumi.com/docs/reference/install)
-- Setup AWS CLI locally
-- Configure cloud credentials locally with `aws configure` and create AWS profile: `ever` (or replace AWS profile name in Pulumi.*.yaml files)
-- Change (optionally) Pulumi Stack with `pulumi stack select dev`, where `dev` is stack name.
-- Deploy to Cloud: `pulumi up`
-- Enjoy
+-   Setup [Docker](https://docs.docker.com/install)
+-   Setup [eksctl](https://docs.aws.amazon.com/en_pv/eks/latest/userguide/getting-started-eksctl.html) (if production k8s deployment required)
+-   Setup [Helm](https://helm.sh/docs/using_helm/#installing-helm) (if production k8s deployments required). Don't forget to run `helm init`!
+-   Setup [Pulumi](https://www.pulumi.com/docs/reference/install)
+-   Setup [AWS CLI](https://docs.aws.amazon.com/en_pv/cli/latest/userguide/cli-chap-install.html)
+-   Configure cloud credentials locally with `aws configure` and create AWS profile: `ever` (or replace AWS profile name in Pulumi.\*.yaml files)
+-   Change (optionally) Pulumi Stack with `pulumi stack select dev`, where `dev` is stack name.
+-   Deploy to Cloud: `pulumi up --yes`
+-   Enjoy
 
 Note: different stacks may use different services, e.g. AWS EKS (k8s) for `prod` (production) stack, AWS ECS Fargate for `demo` stack or AWS ECS container instances (with EC2) for `dev` stack.
 
 Links:
 
-- Read more about Pulumi at <https://github.com/pulumi/pulumi>
-- For CircleCI configuration, see <https://github.com/pulumi/circleci>
+-   Read more about Pulumi at <https://github.com/pulumi/pulumi>
+-   For CircleCI configuration, see <https://github.com/pulumi/circleci>
 
 ## Implementation
 
-Implementation currenty based on Pulumi libraries specific to AWS Cloud.
+Implementation currently based on Pulumi libraries specific to AWS Cloud.
 That's why no other Clouds currently supported, but it should be possible at some point to rewrite code using Pulumi Cloud-Agnostic Packages,
 see <https://github.com/pulumi/pulumi-cloud>, <https://www.pulumi.com/docs/reference/pkg/nodejs/pulumi/cloud>, <https://www.pulumi.com/docs/tutorials/cloudfx>, etc.
 (AWS and Azure clouds should be supported in such case)
@@ -35,11 +38,11 @@ Note: for some of AWS specific features (if Pulumi does not support them yet) we
 
 ### Branches, Pulumi Stacks and Environments
 
-We have 3 following branches for Gauzy Pulumi repo:
+We have 3 branches for Gauzy Pulumi repo:
 
-- `demo` for demo (<https://demo.gauzy.co>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
-- `master` for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
-- `develop` for Development deployment ("default" branch, <http://appdev.gauzy.co:4200>). Stack / Environment called `dev`.
+-   `demo` branch for demo (<https://demo.gauzy.co> or <https://demo.gauzy.dev>, login with `admin@ever.co` and password: `admin`). Stack / Environment called `demo`.
+-   `master` branch for Production deployment (<https://app.gauzy.co>). Stack / Environment called `prod`.
+-   `develop` branch for Development deployment ("default" branch, <https://app.gauzy.dev>). Stack / Environment called `dev`.
 
 Before Gauzy SaaS Platform will be ready, we just deploy current Gauzy Platform to all environments.
 
@@ -52,37 +55,45 @@ In addition, Gauzy Platform build with different settings for each environment (
 
 ## TODO
 
-- [ ] Setup [Redash](https://github.com/getredash/redash) in the same cluster, see <https://github.com/getredash/redash/blob/master/setup/docker-compose.yml> (optionally, but it's great to have that for Gauzy)
+-   [x] ~~Currently we need to manually manage DNS records in Cloudflare (for CNAMEs of api / app). We need to manage it all from this Pulumi project, there is Cloudflare Pulumi provider, already added~~
 
-- [ ] Finish setup Github Actions, see <https://github.com/ever-co/gauzy-pulumi/blob/master/.github/workflows/main.yml>
+-   [ ] Setup [Redash](https://github.com/getredash/redash) in the same cluster, see <https://github.com/getredash/redash/blob/master/setup/docker-compose.yml> (optionally, but it's great to have that for Gauzy)
 
-- [ ] Add support for `develop` and `demo` stacks (branches created), WIP
+-   [ ] Finish setup Github Actions, see <https://github.com/ever-co/gauzy-pulumi/blob/master/.github/workflows/main.yml>
 
-- [ ] Fix CircleCI build for this pulumi project: currently it does not have Docker in the build VM and so stage to build docker containers fails and also we should pull Gauzy repo into sub-folder for Docker builds or found another way. We also should fix PATH to docker files, which is hard-coded now like:
+-   [ ] Fix CircleCI build for this pulumi project: currently it does not have Docker in the build VM and so stage to build docker containers fails and also we should pull Gauzy repo into sub-folder for Docker builds or found another way. We also should fix PATH to docker files, which is hard-coded now like:
 
 ```typescript
-const context = "C:/Coding/Gauzy/gauzy";
-const dockerfile = "C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile"
+const context = 'C:/Coding/Gauzy/gauzy';
+const dockerfile = 'C:/Coding/Gauzy/gauzy/.deploy/webapp/Dockerfile';
 ```
 
 See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <https://circleci.com/orbs/registry/orb/pulumi/pulumi>
 
-- [ ] Security Group of Fargate Service should be added to RDS Cluster for full access to RDS DB. Note: it should be done this way: first we create such security group, next we use it when create RDS Cluster and next we use it when create Fargate Cluster
+-   [ ] Security Group of Fargate Service should be added to RDS Cluster for full access to RDS DB. Note: it should be done this way: first we create such security group, next we use it when create RDS Cluster and next we use it when create Fargate Cluster
 
-- [ ] for large production we should use k8s (currently we use Fargate), see <https://www.pulumi.com/docs/guides/k8s-the-prod-way> how to setup with Pulumi
+-   Must READ: <https://www.pulumi.com/docs/guides/k8s-the-prod-way> (how to setup k8s for production with Pulumi)
 
 ## Pulumi related FAQ
 
-- Removed resource manually in the Cloud? Run `pulumi refresh`
+-   Removed resource manually in the Cloud? Run `pulumi refresh`
 
-## Pulumi related Open-Source projects
+## Pulumi related Open-Source projects and Examples
 
-- Github Pulumi Actions: see <https://github.com/pulumi/actions> and <https://www.pulumi.com/docs/guides/continuous-delivery/github-actions>
-- <https://github.com/cappalyst/cappalyst-pulumi>
-- <https://www.npmjs.com/package/@operator-error/pulumi-lambda-cert>
-- <https://github.com/jen20/pulumi-aws-vpc>
-- <https://github.com/ibrasho/pulumi-github>
-- <https://github.com/k-higuchi0440/pulumi-aws-staticsite-builder>
+-   Github Pulumi Actions: see <https://github.com/pulumi/actions> and <https://www.pulumi.com/docs/guides/continuous-delivery/github-actions>
+-   <https://github.com/cappalyst/cappalyst-pulumi>
+-   <https://www.npmjs.com/package/@operator-error/pulumi-lambda-cert>
+-   <https://github.com/jen20/pulumi-aws-vpc>
+-   <https://github.com/ibrasho/pulumi-github>
+-   <https://github.com/k-higuchi0440/pulumi-aws-staticsite-builder>
+-   <https://github.com/pulumi/examples/tree/master/kubernetes-ts-jenkins> - this seems to be very good solution to run Jenkins in k8s with Pulumi
+-   <https://github.com/pulumi/examples/tree/master/kubernetes-ts-multicloud> - multi-cloud deployment for k8s
+-   <https://github.com/pulumi/examples/tree/master/kubernetes-ts-sock-shop> - lots of micro-services and DBs (including Mongo / MySQL / RabbitMQ queue, etc)
+
+## k8s
+
+-   Run proxy: `kubectl proxy`
+-   Get all running pods: `kubectl get pods -A`
 
 ## Contribute
 
@@ -104,6 +115,7 @@ See also <https://www.pulumi.com/docs/guides/continuous-delivery/circleci> and <
 
 ## Contact Us
 
+-   [Slack Community](https://join.slack.com/t/gauzy/shared_invite/enQtNzc5MTA5MDUwODg2LTI0MGEwYTlmNWFlNzQzMzBlOWExNTk0NzAyY2IwYWYwMzZjMTliYjMwNDI3NTJmYmM4MDQ4NDliMDNiNDY1NWU)
 -   [Spectrum Community](https://spectrum.chat/gauzy)
 -   [Gitter Chat](https://gitter.im/ever-co/gauzy)
 -   [CodeMentor](https://www.codementor.io/evereq)
@@ -137,4 +149,4 @@ You should have received a copy of the relevant GNU Licenses along with this pro
 Gauzy™ is a trademark of Ever Co. LTD.  
 All other brand and product names are trademarks, registered trademarks or service marks of their respective holders.
 
-*Copyright © 2019, Ever Co. LTD. All rights reserved.*
+_Copyright © 2019, Ever Co. LTD. All rights reserved._

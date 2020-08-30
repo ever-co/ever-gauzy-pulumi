@@ -9,3 +9,6 @@ template:
     cloud-aws:useFargate:
       description: Whether to use Fargate-based container compute
       default: true
+    isMinikube:
+      description: Whether we are deploying to minikube in production
+      default: false  
