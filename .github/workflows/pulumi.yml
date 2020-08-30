@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - develop
 
 jobs:
   deploy:
@@ -21,8 +20,38 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
-          # CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_MODE: ${{ secrets.DB_MODE }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_CI: up
+          ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
+          ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
+
+      - uses: docker://pulumi/actions
+        with:
+          args: up --yes --stack demo
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_MODE: ${{ secrets.DB_MODE }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_CI: up
+          ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
+          ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
+
+      - uses: docker://pulumi/actions
+        with:
+          args: up --yes --stack prod
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
