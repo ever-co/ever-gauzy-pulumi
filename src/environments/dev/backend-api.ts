@@ -113,7 +113,7 @@ export const createBackendAPI = async (
 		{
 			metadata: {
 				labels: appLabels,
-				name: `${project}-api-${stack}`,
+				name: 'api',
 				namespace: namespaceName,
 				annotations: {
 					'service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags':
