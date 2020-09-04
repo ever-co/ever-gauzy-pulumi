@@ -6,6 +6,7 @@ on:
     branches:
       - master
 
+
 jobs:
   deploy:
     name: Update
@@ -14,50 +15,60 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - uses: docker://pulumi/actions
-        with:
-          args: up --yes --stack dev
+
+      - name: Install Pulumi
+        run: curl -fsSL https://get.pulumi.com | sh
+      
+      - name: Install AWS CLI
+        run: sudo apt update && sudo apt install awscli -y
+
+      - name: Install NodeJS and dependencies
+        run: |
+          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install
+      
+      - name: Dev Stack
+        run: ~/.pulumi/bin/pulumi up --yes --stack dev
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          PULUMI_CI: up
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
 
-      - uses: docker://pulumi/actions
-        with:
-          args: up --yes --stack demo
+      - name: Demo Stack
+        run: ~/.pulumi/bin/pulumi up --yes --stack demo
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          PULUMI_CI: up
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
 
-      - uses: docker://pulumi/actions
-        with:
-          args: up --yes --stack prod
+      - name: Production Stack
+        run: ~/.pulumi/bin/pulumi up --yes --stack prod
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          PULUMI_CI: up
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
