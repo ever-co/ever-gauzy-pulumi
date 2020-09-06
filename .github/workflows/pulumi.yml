@@ -21,23 +21,24 @@ jobs:
       
       - name: Install AWS CLI
         run: sudo apt update && sudo apt install awscli -y
-
+      
+      - name: AWS EKS
+        run: aws eks update-kubeconfig --name ever-dev > ~/kubeconfig
+        env:  
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+      
+      - name: Stacks
+        run: ~/.pulumi/bin/pulumi stack ls
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
       - name: Install NodeJS and dependencies
         run: |
           curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
           sudo apt-get install -y nodejs
           npm install
-      - name: AWS EKS
-        run: aws eks get-token --cluster-name ever-dev
-        env:  
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-
-      - name: Stacks
-        run: ~/.pulumi/bin/pulumi stack ls
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
       - name: Dev Stack
         run: ~/.pulumi/bin/pulumi up --yes --stack dev
@@ -45,12 +46,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
-          KUBECONFIG: kubeconfig.json
+          EVER_KUBECONFIG: true
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
+          KUBECONFIG: ~/kubeconfig
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -61,12 +63,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
-          KUBECONFIG: kubeconfig.json
+          EVER_KUBECONFIG: true
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
+          KUBECONFIG: ~/kubeconfig
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -77,12 +80,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
-          KUBECONFIG: kubeconfig.json
+          EVER_KUBECONFIG: true
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
+          KUBECONFIG: ~/kubeconfig
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}

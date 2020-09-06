@@ -225,7 +225,14 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	const name = 'gauzy';
 
-	const provider = new k8s.Provider(`${name}-eks-k8s`, {});
+	let provider: k8s.Provider;
+	if (process.env.EVER_KUBECONFIG) {
+		provider = new k8s.Provider(`${name}-eks-k8s`, {});
+	} else {
+		provider = new k8s.Provider(`${name}-eks-k8s`, {
+			kubeconfig: cluster_kubeconfig.apply(JSON.stringify),
+		});
+	}
 
 	// Create a Kubernetes Namespace for our production app API and front-end
 	// NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
