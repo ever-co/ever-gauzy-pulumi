@@ -6,6 +6,7 @@ import * as config from '../../config';
 import * as backendAPI from './backend-api';
 import * as frontend from './frontend';
 import * as k8s from '@pulumi/kubernetes';
+import * as path from 'path';
 import { Environment } from '../environments';
 
 const project = pulumi.getProject();
@@ -224,9 +225,7 @@ export const setupDevEnvironment = async (dockerImages: {
 
 	const name = 'gauzy';
 
-	const provider = new k8s.Provider(`${name}-eks-k8s`, {
-		kubeconfig: cluster_kubeconfig.apply(JSON.stringify),
-	});
+	const provider = new k8s.Provider(`${name}-eks-k8s`, {});
 
 	// Create a Kubernetes Namespace for our production app API and front-end
 	// NOTE: SaaS may use same k8s cluster, but create different namespaces, one per tenant
