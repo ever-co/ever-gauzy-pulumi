@@ -25,7 +25,6 @@ export const createBackendAPI = async (
 	const dbName = <string>process.env.DB_NAME;
 	const dbUser = <string>process.env.DB_USER;
 	const dbPassword = <string>process.env.DB_PASS;
-
 	const container = {
 		name,
 		image: `${apiImage.registryId}.dkr.ecr.us-east-1.amazonaws.com/${apiImage.repositoryName}@${apiImage.imageDigest}`,
@@ -92,6 +91,9 @@ export const createBackendAPI = async (
 					},
 					spec: {
 						containers: [container],
+						securityContext: {
+							runAsUser: 0,
+						},
 					},
 				},
 			},
