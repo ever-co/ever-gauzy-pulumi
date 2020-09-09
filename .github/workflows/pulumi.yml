@@ -6,7 +6,6 @@ on:
     branches:
       - master
 
-
 jobs:
   deploy:
     name: Update
@@ -23,8 +22,9 @@ jobs:
         run: sudo apt update && sudo apt install awscli -y
       
       - name: AWS EKS
-        run: |
+        run: |          
           mkdir -p ~/.kube
+          sudo chown -R :users ~/.kube
           aws eks update-kubeconfig --name ever-dev
           kubectl get svc
         env:  
