@@ -56,7 +56,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/.kube/config-ever-dev
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -73,7 +73,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/.kube/config-ever-dev
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -90,7 +90,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/.kube/config-ever-dev
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
