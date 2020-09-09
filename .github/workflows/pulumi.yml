@@ -25,7 +25,7 @@ jobs:
         run: |          
           mkdir -p ~/.kube
           sudo chown -R :users ~/.kube
-          aws eks --region us-east-1 update-kubeconfig --name ever-dev --role-arn arn:aws:iam::077336794262:role/ever-dev-eksRole-role-acf9296
+          aws eks --region us-east-1 update-kubeconfig --name ever-dev
           kubectl get svc
         env:  
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
