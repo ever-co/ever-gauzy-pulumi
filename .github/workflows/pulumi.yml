@@ -31,7 +31,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
-          KUBECONFIG: ~/.kube/config-ever-dev
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
       
       - name: Stacks
         run: ~/.pulumi/bin/pulumi stack ls
