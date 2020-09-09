@@ -6,7 +6,6 @@ on:
     branches:
       - master
 
-
 jobs:
   deploy:
     name: Update
@@ -23,11 +22,16 @@ jobs:
         run: sudo apt update && sudo apt install awscli -y
       
       - name: AWS EKS
-        run: aws eks update-kubeconfig --name ever-dev > ~/kubeconfig
+        run: |          
+          mkdir -p ~/.kube
+          sudo chown -R :users ~/.kube
+          aws eks --region us-east-1 update-kubeconfig --name ever-dev
+          kubectl get svc
         env:  
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
       
       - name: Stacks
         run: ~/.pulumi/bin/pulumi stack ls
@@ -52,7 +56,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/kubeconfig
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -69,7 +73,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/kubeconfig
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
@@ -86,7 +90,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_MODE: ${{ secrets.DB_MODE }}
-          KUBECONFIG: ~/kubeconfig
+          KUBECONFIG: /home/runner/.kube/config-ever-dev
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           ZONE_ID_DEV: ${{ secrets.CLOUDFLARE_ZONE_ID_DEV }}
           ZONE_ID_PROD: ${{ secrets.CLOUDFLARE_ZONE_ID_PROD }}
