@@ -23,7 +23,7 @@ jobs:
         run: sudo apt update && sudo apt install awscli -y
       
       - name: AWS EKS
-        run: aws eks update-kubeconfig --name ever-dev
+        run: aws eks update-kubeconfig --name ever-dev --kubeconfig ~/kubeconfig
         env:  
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
