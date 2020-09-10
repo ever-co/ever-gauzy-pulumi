@@ -1,6 +1,6 @@
 # Deploy and Manage Gauzy Platform on Clouds
 
-![Pulumi](https://github.com/ever-co/gauzy-pulumi/workflows/Pulumi/badge.svg)
+![Pulumi](https://github.com/ever-co/gauzy-pulumi/workflows/Pulumi/badge.svg?branch=master)
 
 ## Introduction
 
