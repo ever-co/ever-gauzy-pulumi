@@ -94,6 +94,9 @@ export const createBackendAPI = async (
 					},
 					spec: {
 						containers: [container],
+						securityContext: {
+							runAsUser: 0,
+						},
 					},
 				},
 			},

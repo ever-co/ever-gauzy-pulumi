@@ -26,17 +26,11 @@ jobs:
           mkdir -p ~/.kube
           sudo chown -R :users ~/.kube
           aws eks --region us-east-1 update-kubeconfig --name ever-dev
-          kubectl get svc
         env:  
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           KUBECONFIG: /home/runner/.kube/config-ever-dev
-      
-      - name: Stacks
-        run: ~/.pulumi/bin/pulumi stack ls
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       
       - name: Install NodeJS and dependencies
         run: |
