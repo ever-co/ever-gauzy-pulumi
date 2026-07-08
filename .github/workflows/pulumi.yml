@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     name: Update
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_LINUX_X64_4 || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v2
         with:
